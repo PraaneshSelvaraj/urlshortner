@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-service
+    environment:
+      MYSQL_ROOT_PASSWORD: test123
+      MYSQL_DATABASE: urlshortner
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  notification:
+    image: notification-service:1.0.0
+    container_name: notification-service
+    ports:
+      - "9001:9000"
+    depends_on:
+      - mysql
+
+  rest:
+    image: rest-service:1.0.0
+    container_name: rest-service
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data:

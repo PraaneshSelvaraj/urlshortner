@@ -1,0 +1,2 @@
+-> /                  routers.NotificationRouter
+GET    /health        controllers.NotificationController.health

@@ -1,0 +1,6 @@
+GET     /health                           controllers.HomeController.health()
+POST    /urls                             controllers.UrlController.addUrl()
+GET     /urls                             controllers.UrlController.getUrls()
+GET     /notifications                    controllers.UrlController.getNotifications()
+GET    /:shortCode                        controllers.UrlController.redirectUrl(shortCode: String)
+
