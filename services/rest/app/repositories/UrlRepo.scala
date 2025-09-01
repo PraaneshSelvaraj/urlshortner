@@ -14,25 +14,31 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import dbConfig.profile.api._
 
-  def getAllUrls: Future[Seq[Url]] = dbConfig.db.run(urls.result)
+  private val db = dbConfig.db
 
-  def getUrlById(id: Long): Future[Option[Url]] = dbConfig.db.run(urls.filter(_.id === id).result.headOption)
+  def getAllUrls: Future[Seq[Url]] =
+    db.run(urls.result)
 
-  def getUrlByShortcode(short_code: String): Future[Option[Url]] = dbConfig.db.run(urls.filter(_.short_code === short_code).result.headOption)
+  def getUrlById(id: Long): Future[Option[Url]] =
+    db.run(urls.filter(_.id === id).result.headOption)
 
-  def addUrl(url: Url): Try[Future[Url]] = Try {
-    dbConfig.db.run(urls returning urls.map(_.id) += url) flatMap {
-      id => dbConfig.db.run(urls.filter(_.id === id).result.head)
+  def getUrlByShortcode(short_code: String): Future[Option[Url]] =
+    db.run(urls.filter(_.short_code === short_code).result.headOption)
+
+  def addUrl(url: Url) = Try {
+    db.run(urls returning urls.map(_.id) += url).flatMap { id =>
+      db.run(urls.filter(_.id === id).result.head)
     }
   }
 
-
-  def incrementUrlCount(shortCode: String): Future[Int] = dbConfig.db.run {
+  def incrementUrlCount(shortCode: String): Future[Int] = {
     val query = urls.filter(_.short_code === shortCode)
-    query.map(_.clicks).result.head.flatMap { currentClicks =>
-      val newCount = currentClicks + 1
-      query.map(_.clicks).update(newCount).map(_ => newCount)
-    }
+    val action = for {
+      currentClicks <- query.map(_.clicks).result.head
+      newCount = currentClicks + 1
+      _ <- query.map(_.clicks).update(newCount)
+    } yield newCount
+    db.run(action)
   }
 
 }
