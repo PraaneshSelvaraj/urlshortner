@@ -23,6 +23,11 @@ class NotificationRouter @Inject()(mat: Materializer, system: ActorSystem, val n
         status = Status.INVALID_ARGUMENT.withDescription("message is required")
       ))
     }
+    else if(in.shortCode.isEmpty){
+      Future.failed(new GrpcServiceException(
+        status = Status.INVALID_ARGUMENT.withDescription("shortCode is required")
+      ))
+    }
     else {
       val newNotification = Notification(
         id = 0L,

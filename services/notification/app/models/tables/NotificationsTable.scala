@@ -7,7 +7,7 @@ import java.sql.Timestamp
 
 class NotificationsTable(tag: Tag) extends Table[Notification](tag, "notifications"){
   def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
-  def short_code: Rep[String] = column[String]("short_code", O.Unique)
+  def short_code: Rep[String] = column[String]("short_code")
   def notificationType: Rep[String] = column[String]("notificationType")
   def message: Rep[String] = column[String]("message")
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at", O.Default(new Timestamp(System.currentTimeMillis())))

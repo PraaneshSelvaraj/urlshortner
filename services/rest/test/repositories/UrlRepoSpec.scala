@@ -8,7 +8,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.guice.GuiceApplicationBuilder
-
+import scala.concurrent.ExecutionContext
 import java.sql.Timestamp
 import java.time.Instant
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -33,8 +33,8 @@ class UrlRepoSpec
       .build()
 
   private val dbConfigProvider = app.injector.instanceOf[DatabaseConfigProvider]
-  private implicit val ec: scala.concurrent.ExecutionContext =
-    app.injector.instanceOf[scala.concurrent.ExecutionContext]
+  private implicit val ec: ExecutionContext =
+    app.injector.instanceOf[ExecutionContext]
   private val repo = new UrlRepo(dbConfigProvider)
 
   implicit override val patienceConfig: PatienceConfig =
@@ -45,24 +45,29 @@ class UrlRepoSpec
     "add and get a URL" in {
       val url = Url(0L, "abc123", "https://example.com", 0, Timestamp.from(Instant.now()))
 
-      whenReady(repo.addUrl(url).get) { inserted =>
-        whenReady(repo.getUrlById(inserted.id)) { found =>
-          found should not be empty
-          found.get.short_code shouldBe "abc123"
-        }
+      val result = for {
+        inserted <- repo.addUrl(url).get
+        found <- repo.getUrlById(inserted.id)
+      } yield found
+
+      whenReady(result) { found =>
+        found should not be empty
+        found.get.short_code shouldBe "abc123"
       }
     }
 
     "increment clicks" in {
       val url = Url(0L, "xyz789", "https://test.com", 0, Timestamp.from(Instant.now()))
 
-      whenReady(repo.addUrl(url).get) { inserted =>
-        whenReady(repo.incrementUrlCount("xyz789")) { newCount =>
-          newCount shouldBe 1
-          whenReady(repo.getUrlByShortcode("xyz789")) { found =>
-            found.get.clicks shouldBe 1
-          }
-        }
+      val result = for {
+        _ <- repo.addUrl(url).get
+        count <- repo.incrementUrlCount("xyz789")
+        found <- repo.getUrlByShortcode("xyz789")
+      } yield (count, found)
+
+      whenReady(result) { case (count, found) =>
+        count shouldBe 1
+        found.get.clicks shouldBe 1
       }
     }
 

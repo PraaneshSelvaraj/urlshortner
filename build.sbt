@@ -35,6 +35,7 @@ lazy val `notification-service` = (project in file("services/notification"))
       "com.typesafe.play" %% "play-slick" % "5.4.0",
       "mysql" % "mysql-connector-java" % "8.0.33",
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
+      "com.h2database" % "h2" % "2.3.232" % Test,
       "org.mockito" %% "mockito-scala" % "2.0.0" % Test
     ),
     Docker / dockerAlias := DockerAlias(None, None, "notification-service", Some("1.0.0")),
