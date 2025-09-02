@@ -46,7 +46,7 @@ class UrlRepoSpec
       val url = Url(0L, "abc123", "https://example.com", 0, Timestamp.from(Instant.now()))
 
       val result = for {
-        inserted <- repo.addUrl(url).get
+        inserted <- repo.addUrl(url)
         found <- repo.getUrlById(inserted.id)
       } yield found
 
@@ -60,7 +60,7 @@ class UrlRepoSpec
       val url = Url(0L, "xyz789", "https://test.com", 0, Timestamp.from(Instant.now()))
 
       val result = for {
-        _ <- repo.addUrl(url).get
+        _ <- repo.addUrl(url)
         count <- repo.incrementUrlCount("xyz789")
         found <- repo.getUrlByShortcode("xyz789")
       } yield (count, found)
@@ -75,8 +75,8 @@ class UrlRepoSpec
       val url1 = Url(0L, "code1", "https://scala-lang.org", 0, Timestamp.from(Instant.now()))
       val url2 = Url(0L, "code2", "https://playframework.com", 0, Timestamp.from(Instant.now()))
 
-      whenReady(repo.addUrl(url1).get) { _ =>
-        whenReady(repo.addUrl(url2).get) { _ =>
+      whenReady(repo.addUrl(url1)) { _ =>
+        whenReady(repo.addUrl(url2)) { _ =>
           whenReady(repo.getAllUrls) { urls =>
             urls.map(_.short_code) should contain allOf("code1", "code2")
           }

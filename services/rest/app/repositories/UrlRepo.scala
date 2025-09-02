@@ -7,7 +7,6 @@ import slick.jdbc.JdbcProfile
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
@@ -25,11 +24,10 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
   def getUrlByShortcode(short_code: String): Future[Option[Url]] =
     db.run(urls.filter(_.short_code === short_code).result.headOption)
 
-  def addUrl(url: Url) = Try {
+  def addUrl(url: Url): Future[Url] =
     db.run(urls returning urls.map(_.id) += url).flatMap { id =>
       db.run(urls.filter(_.id === id).result.head)
     }
-  }
 
   def incrementUrlCount(shortCode: String): Future[Int] = {
     val query = urls.filter(_.short_code === shortCode)
