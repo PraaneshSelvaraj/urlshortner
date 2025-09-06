@@ -35,3 +35,78 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
     docker-compose up
     ```
 ---
+
+### API ENDPOINTS
+
+1. **Shorten a URL**:
+    Creates a new short URL
+    - URL: `/urls`
+    - Method: `POST`
+    - Request Body:
+         ```json
+        { 
+            "url" : "https://example.com/"
+        }
+        ```
+
+    - Response (201 Created):
+        ```json
+        {
+            "message": "Url Created successfully",
+            "data": {
+                "id": 1,
+                "short_code": "5eQsiTg",
+                "long_url": "https://example.com/",
+                "clicks": 0,
+                "created_at": 1757139007000
+            }
+        }
+        ```
+      
+2. **Redirect to Original URL**
+    Redirects to the original URL using the shortcode
+    - URL: `/:shortcode`
+    - Method: `GET`
+    - Example: `GET http://localhost:9000/5eQsiTg`
+    - Response: A `307 Temporary Redirect` to the Original URL
+
+3. **Get All URLs**
+    Retrieves a list of all URLs
+    - URL: `/urls`
+    - Method: `GET`
+    - Response (200 OK):
+        ```json
+        {
+        "message": "List of Urls",
+        "urls": [
+            {
+                "id": 1,
+                "short_code": "5eQsiTg",
+                "long_url": "https://example.com",
+                "clicks": 0,
+                "created_at": 1757139007000
+            }
+        ]
+        }
+        ```
+
+
+
+4. **Get All Notifications**
+    Retrieves All Notifications
+    - URL: `/notifications`
+    - Method: `GET`
+    - Response (200 OK):
+        ```json
+        {
+            "message": "List of all Notifications",
+            "notifications": [
+                {
+                    "id": 1,
+                    "short_code": "5eQsiTg",
+                    "notificationType": "NEWURL",
+                    "message": "URL Created for https://example.com/"
+                }
+            ]
+        }
+        ```
