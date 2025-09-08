@@ -89,8 +89,8 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val mockRepo = mock[NotificationRepo]
       val router = new NotificationRouter(mat, system, mockRepo)
 
-      val notification1 = Notification(1L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()))
-      val notification2 = Notification(2L, "abc123", "TRESHOLD", "Threshold reached", Timestamp.from(Instant.now()))
+      val notification1 = Notification(1L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification2 = Notification(2L, "abc123", "TRESHOLD", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       when(mockRepo.getNotifications)
         .thenReturn(Future.successful(Seq(notification1, notification2)))

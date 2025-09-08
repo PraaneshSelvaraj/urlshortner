@@ -10,9 +10,10 @@ class NotificationsTable(tag: Tag) extends Table[Notification](tag, "notificatio
   def short_code: Rep[String] = column[String]("short_code")
   def notificationType: Rep[String] = column[String]("notificationType")
   def message: Rep[String] = column[String]("message")
-  def created_at: Rep[Timestamp] = column[Timestamp]("created_at", O.Default(new Timestamp(System.currentTimeMillis())))
+  def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
+  def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
 
-  override def * : ProvenShape[Notification] = (id, short_code, notificationType, message, created_at) <> ((Notification.apply _).tupled,Notification.unapply)
+  override def * : ProvenShape[Notification] = (id, short_code, notificationType, message, created_at, updated_at) <> ((Notification.apply _).tupled,Notification.unapply)
 }
 
 object NotificationsTable {

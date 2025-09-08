@@ -22,7 +22,8 @@ class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: 
           short_code = code,
           long_url = urlData.url,
           clicks = 0,
-          created_at = new java.sql.Timestamp(System.currentTimeMillis())
+          created_at = new java.sql.Timestamp(System.currentTimeMillis()),
+          updated_at = new java.sql.Timestamp(System.currentTimeMillis())
         )
         urlRepo.addUrl(newUrl)
       }

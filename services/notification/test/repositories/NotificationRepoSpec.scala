@@ -59,15 +59,15 @@ class NotificationRepoSpec
   "NotificationRepo" should {
 
     "add a Notification" in {
-      val notification = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()))
+      val notification = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
       whenReady(repo.addNotification(notification)) { result =>
         result shouldBe 1
       }
     }
 
     "get all notifications" in {
-      val n1 = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()))
-      val n2 = Notification(0L, "abc123", "TRESHOLD", "TRESHOLD REACHED", Timestamp.from(Instant.now()))
+      val n1 = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val n2 = Notification(0L, "abc123", "TRESHOLD", "TRESHOLD REACHED", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       val result = for {
         _ <- repo.addNotification(n1)

@@ -34,7 +34,8 @@ class NotificationRouter @Inject()(mat: Materializer, system: ActorSystem, val n
         short_code = in.shortCode,
         notificationType = in.notificationType.toString(),
         message = in.message,
-        created_at = new Timestamp(System.currentTimeMillis())
+        created_at = new Timestamp(System.currentTimeMillis()),
+        updated_at = new Timestamp(System.currentTimeMillis())
       )
       notificationRepo.addNotification(newNotification).flatMap{
         rowsAffected => {

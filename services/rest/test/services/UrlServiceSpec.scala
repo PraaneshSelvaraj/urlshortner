@@ -12,6 +12,8 @@ import repositories.UrlRepo
 import example.urlshortner.notification.grpc.{GetNotificationsResponse, NotificationReply, NotificationRequest, NotificationServiceClient, NotificationType}
 import com.google.protobuf.empty.Empty
 
+import java.sql.Timestamp
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
@@ -30,7 +32,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     short_code = "abcdefg",
     long_url = "https://www.example.com",
     clicks = 0,
-    created_at = new java.sql.Timestamp(System.currentTimeMillis())
+    created_at = Timestamp.from(Instant.now()),
+    updated_at = Timestamp.from(Instant.now())
   )
 
   override def beforeEach(): Unit = {

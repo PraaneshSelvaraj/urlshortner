@@ -43,7 +43,7 @@ class UrlRepoSpec
   "UrlRepo" should {
 
     "add and get a URL" in {
-      val url = Url(0L, "abc123", "https://example.com", 0, Timestamp.from(Instant.now()))
+      val url = Url(0L, "abc123", "https://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       val result = for {
         inserted <- repo.addUrl(url)
@@ -57,7 +57,7 @@ class UrlRepoSpec
     }
 
     "increment clicks" in {
-      val url = Url(0L, "xyz789", "https://test.com", 0, Timestamp.from(Instant.now()))
+      val url = Url(0L, "xyz789", "https://test.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       val result = for {
         _ <- repo.addUrl(url)
@@ -72,8 +72,8 @@ class UrlRepoSpec
     }
 
     "get all Urls" in {
-      val url1 = Url(0L, "code1", "https://scala-lang.org", 0, Timestamp.from(Instant.now()))
-      val url2 = Url(0L, "code2", "https://playframework.com", 0, Timestamp.from(Instant.now()))
+      val url1 = Url(0L, "code1", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url2 = Url(0L, "code2", "https://playframework.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       whenReady(repo.addUrl(url1)) { _ =>
         whenReady(repo.addUrl(url2)) { _ =>

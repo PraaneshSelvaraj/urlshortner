@@ -3,7 +3,7 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import dtos.UrlDto
-import models.{Url, Notification}
+import models.{Notification, Url}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
@@ -14,6 +14,8 @@ import play.api.test.Helpers._
 import play.api.test._
 import services.UrlService
 
+import java.sql.Timestamp
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTimeout {
@@ -28,7 +30,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "add url" in {
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
-      val urlAdded = Url(1L, "abc123", "http://example.com", 0, new java.sql.Timestamp(System.currentTimeMillis()))
+      val urlAdded = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       when(mockService.addUrl(any[UrlDto])) thenReturn Future.successful(urlAdded)
 
@@ -56,7 +58,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
 
-      val url = Url(1L, "abc123", "http://example.com", 0, new java.sql.Timestamp(System.currentTimeMillis()))
+      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       when(mockService.redirect("abc123")) thenReturn Future.successful(url)
 
@@ -84,7 +86,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
 
-      val url = Url(1L, "abc123", "http://example.com", 0, new java.sql.Timestamp(System.currentTimeMillis()))
+      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       when(mockService.getAllUrls) thenReturn Future.successful(Seq(url))
 
