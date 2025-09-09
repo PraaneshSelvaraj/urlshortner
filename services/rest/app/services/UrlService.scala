@@ -34,7 +34,7 @@ class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: 
           shortCode = urlAdded.short_code
         )
         val reply = notificationServiceClient.notifyMethod(notification)
-        reply.map(r => println(s"Notification Status: ${r.success}, Notification Message: ${r.message}"))
+        reply.map(r => println(s"Notification Success: ${r.success}, Notification Status: ${r.notificationStatus}  Notification Message: ${r.message}"))
       }
     } yield urlAdded
   }
@@ -72,6 +72,7 @@ class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: 
               id = notification.id,
               short_code = notification.shortCode,
               notificationType = notification.notificationType.toString(),
+              notificationStatus = notification.notificationStatus.toString(),
               message = notification.message
             )
         }

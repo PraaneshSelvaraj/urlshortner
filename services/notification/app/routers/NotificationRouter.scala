@@ -5,13 +5,15 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.grpc.GrpcServiceException
 import org.apache.pekko.stream.Materializer
 import example.urlshortner.notification.grpc
-import example.urlshortner.notification.grpc.{NotificationRequest, NotificationReply, AbstractNotificationServiceRouter, GetNotificationsResponse, NotificationType}
+import example.urlshortner.notification.grpc._
 import io.grpc.Status
 import repositories.NotificationRepo
 import models.Notification
+
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import java.sql.Timestamp
+import java.time.Instant
 
 class NotificationRouter @Inject()(mat: Materializer, system: ActorSystem, val notificationRepo: NotificationRepo) extends AbstractNotificationServiceRouter(system) {
   implicit val ec: ExecutionContextExecutor = system.dispatcher
@@ -29,48 +31,73 @@ class NotificationRouter @Inject()(mat: Materializer, system: ActorSystem, val n
       ))
     }
     else {
-      val notificationTypeName = in.notificationType.toString()
-      notificationRepo.getNotificationTypeId(notificationTypeName).flatMap {
-        case Some(typeId) =>
-          val newNotification = Notification(
+        val notificationTypeName = in.notificationType.toString()
+
+        for {
+          typeId <- notificationRepo.getNotificationTypeId(notificationTypeName) flatMap {
+            case Some(id) => Future.successful(id)
+            case None =>
+              Future.failed(new GrpcServiceException(
+                status = Status.INVALID_ARGUMENT.withDescription(s"Invalid notification type: $notificationTypeName")
+              ))
+          }
+          statusId <- notificationRepo.getNotificationStatusId("SUCCESS") flatMap {
+            case Some(id) => Future.successful(id)
+            case None =>
+              Future.failed(new GrpcServiceException(
+                status = Status.INVALID_ARGUMENT.withDescription(s"Invalid notification type: $notificationTypeName")
+              ))
+          }
+          newNotification = Notification(
             id = 0L,
             short_code = in.shortCode,
             notification_type_id = typeId,
+            notification_status_id = statusId,
             message = in.message,
-            created_at = new Timestamp(System.currentTimeMillis()),
-            updated_at = new Timestamp(System.currentTimeMillis())
+            created_at = Timestamp.from(Instant.now()),
+            updated_at = Timestamp.from(Instant.now()),
           )
-          notificationRepo.addNotification(newNotification).flatMap {
-            rowsAffected => {
-              if (rowsAffected <= 0) Future.failed(new GrpcServiceException(
-                status = Status.INTERNAL.withDescription("Unable to add Notification due to db issue")
-              ))
-              else {
-                println(s"NOTIFICATION ($notificationTypeName) - shortCode: ${newNotification.short_code} - message: ${newNotification.message}")
-                Future.successful(NotificationReply(success = true, "Notification Added successfully"))
-              }
-            }
+          rowsAffected <- notificationRepo.addNotification(newNotification)
+        } yield {
+          if(rowsAffected <= 0) {
+            throw new GrpcServiceException(
+              status = Status.INTERNAL.withDescription("Unable to add Notification due to db issue")
+            )
           }
-        case None =>
-          Future.failed(new GrpcServiceException(
-            status = Status.INVALID_ARGUMENT.withDescription(s"Invalid notification type: $notificationTypeName")
-          ))
-      }
+          else {
+            println(s"NOTIFICATION ($notificationTypeName) - status: PENDING - shortCode: ${newNotification.short_code} - message: ${newNotification.message}")
+            NotificationReply(
+              success = true,
+              message = "Notification Added successfully",
+              notificationStatus = NotificationStatus.SUCCESS
+            )
+          }
+        }
+
     }
   }
 
   override def getNotifications(in: Empty): Future[GetNotificationsResponse] =
-    notificationRepo.getNotificationsWithTypeName.map { notifications =>
+    notificationRepo.getNotifications map { notifications =>
       val grpcNotifications = notifications.map { notification =>
         val notificationType = notification.notificationType match {
           case "NEWURL" => NotificationType.NEWURL
           case "TRESHOLD" => NotificationType.TRESHOLD
           case _ => throw new NoSuchElementException(s"Unknown notification type: ${notification.notificationType}")
         }
+
+        val notificationStatus = notification.notificationStatus match {
+          case "SUCCESS" => NotificationStatus.SUCCESS
+          case "FAILURE" => NotificationStatus.FAILURE
+          case "PENDING" => NotificationStatus.PENDING
+          case _ => throw new NoSuchElementException(s"Unknown notification status: ${notification.notificationStatus}")
+        }
+
         grpc.Notification(
           id = notification.id,
           shortCode = notification.short_code,
           notificationType = notificationType,
+          notificationStatus = notificationStatus,
           message = notification.message
         )
       }

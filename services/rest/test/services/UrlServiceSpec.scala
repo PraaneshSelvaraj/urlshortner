@@ -58,7 +58,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       }
     }
 
-      "redirect and send notificatoin" in {
+      "redirect and send notification" in {
         val threshold = 5
         when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
         when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(threshold + 1))
@@ -94,6 +94,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         notification.short_code mustBe "abc"
         notification.message mustBe "New URL created"
         notification.notificationType mustBe NotificationType.NEWURL.toString
+        notification.notificationStatus mustBe "SUCCESS"
         verify(mockNotificationServiceClient).getNotifications(any[Empty]())
       }
     }

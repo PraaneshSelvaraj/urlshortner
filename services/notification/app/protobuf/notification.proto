@@ -13,6 +13,12 @@ enum NotificationType{
   TRESHOLD = 1;
 }
 
+enum NotificationStatus{
+  SUCCESS = 0;
+  PENDING = 1;
+  FAILURE = 2;
+}
+
 message NotificationRequest{
   NotificationType notificationType = 1;
   string message = 2;
@@ -22,13 +28,15 @@ message NotificationRequest{
 message NotificationReply{
   bool success = 1;
   string message = 2;
+  NotificationStatus notificationStatus = 3;
 }
 
 message Notification {
   int64 id = 1;
   string short_code = 2;
   NotificationType notificationType = 3;
-  string message = 4;
+  NotificationStatus notificationStatus = 4;
+  string message = 5;
 }
 
 message GetNotificationsResponse{

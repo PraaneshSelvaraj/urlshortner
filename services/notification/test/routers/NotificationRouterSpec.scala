@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.sql.Timestamp
 import java.time.Instant
 import repositories.NotificationRepo
-import models.NotificationWithType
+import models.NotificationDTO
 
 class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -44,6 +44,9 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
 
       when(mockRepo.addNotification(any[Notification]))
         .thenReturn(Future.successful(1))
+
+      when(mockRepo.getNotificationStatusId(any[String]))
+        .thenReturn(Future.successful(Some(1)))
 
       val result = router.notifyMethod(request)
 
@@ -93,10 +96,10 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val mockRepo = mock[NotificationRepo]
       val router = new NotificationRouter(mat, system, mockRepo)
 
-      val notification1 = NotificationWithType(1L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val notification2 = NotificationWithType(2L, "def456", "TRESHOLD", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification1 = NotificationDTO(1L, "abc123", "NEWURL", "SUCCESS", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification2 = NotificationDTO(2L, "def456", "TRESHOLD", "FAILURE", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
-      when(mockRepo.getNotificationsWithTypeName)
+      when(mockRepo.getNotifications)
         .thenReturn(Future.successful(Seq(notification1, notification2)))
 
       val result = router.getNotifications(Empty())

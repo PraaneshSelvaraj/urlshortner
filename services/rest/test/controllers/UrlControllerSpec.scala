@@ -101,20 +101,30 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
 
-      val notification = Notification(
+      val n1 = Notification(
         id = 1L,
         short_code = "abc123",
         notificationType = "NEWURL",
+        notificationStatus = "SUCCESS",
         message = "created"
       )
 
-      when(mockService.getNotifications) thenReturn Future.successful(Seq(notification))
+      val n2 = Notification(
+        id = 2L,
+        short_code = "abc123",
+        notificationType = "TRESHOLD",
+        notificationStatus = "SUCCESS",
+        message = "created"
+      )
+
+      val notifications = Seq(n1, n2)
+      when(mockService.getNotifications) thenReturn Future.successful(notifications)
 
       val request = FakeRequest(GET, "/notifications")
       val result = controller.getNotifications(request)
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("message" -> "List of all Notifications", "notifications" -> Seq(notification))
+      contentAsJson(result) mustBe Json.obj("message" -> "List of all Notifications", "notifications" -> notifications)
     }
   }
 }

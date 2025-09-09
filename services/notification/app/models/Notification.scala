@@ -3,9 +3,7 @@ package models
 import play.api.libs.json.{Json, OFormat, Reads, Writes}
 import java.sql.Timestamp
 
-case class Notification(id: Long, short_code: String, notification_type_id: Int, message: String, created_at:Timestamp, updated_at: Timestamp)
-
-case class NotificationWithType(id: Long, short_code: String, notificationType: String, message: String, created_at:Timestamp, updated_at: Timestamp)
+case class Notification(id: Long, short_code: String, notification_type_id: Int, notification_status_id: Int, message: String, created_at:Timestamp, updated_at: Timestamp)
 
 object Notification {
   implicit val timestampReads: Reads[Timestamp] = Reads.of[Long].map(new Timestamp(_))

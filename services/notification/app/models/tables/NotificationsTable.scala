@@ -9,12 +9,13 @@ class NotificationsTable(tag: Tag) extends Table[Notification](tag, "notificatio
   def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def short_code: Rep[String] = column[String]("short_code")
   def notification_type_id: Rep[Int] = column[Int]("notification_type_id")
+  def notification_status_id: Rep[Int] = column[Int]("notification_status_id")
   def message: Rep[String] = column[String]("message")
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
 
   def notificationTypeFK = foreignKey("fk_notification_type", notification_type_id, NotificationTypesTable.notificationTypes)(_.id)
-  override def * : ProvenShape[Notification] = (id, short_code, notification_type_id, message, created_at, updated_at) <> ((Notification.apply _).tupled,Notification.unapply)
+  override def * : ProvenShape[Notification] = (id, short_code, notification_type_id, notification_status_id, message, created_at, updated_at) <> ((Notification.apply _).tupled,Notification.unapply)
 }
 
 object NotificationsTable {
