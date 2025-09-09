@@ -16,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.sql.Timestamp
 import java.time.Instant
 import repositories.NotificationRepo
+import models.NotificationWithType
 
 class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -37,6 +38,9 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
         notificationType = NotificationType.NEWURL,
         message = "Created new url"
       )
+
+      when(mockRepo.getNotificationTypeId(any[String]))
+        .thenReturn(Future.successful(Some(1)))
 
       when(mockRepo.addNotification(any[Notification]))
         .thenReturn(Future.successful(1))
@@ -89,17 +93,21 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val mockRepo = mock[NotificationRepo]
       val router = new NotificationRouter(mat, system, mockRepo)
 
-      val notification1 = Notification(1L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val notification2 = Notification(2L, "abc123", "TRESHOLD", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification1 = NotificationWithType(1L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification2 = NotificationWithType(2L, "def456", "TRESHOLD", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
-      when(mockRepo.getNotifications)
+      when(mockRepo.getNotificationsWithTypeName)
         .thenReturn(Future.successful(Seq(notification1, notification2)))
 
       val result = router.getNotifications(Empty())
 
       whenReady(result) { response =>
-        response.notifications.map(_.shortCode) should contain("abc123")
-        response.notifications.map(_.notificationType) should contain allOf(NotificationType.NEWURL, NotificationType.TRESHOLD)
+        response.notifications.length shouldBe 2
+        response.notifications.map(n => (n.shortCode, n.notificationType.toString, n.message)) should contain theSameElementsAs
+          Seq(
+            (notification1.short_code, notification1.notificationType, notification1.message),
+            (notification2.short_code, notification2.notificationType, notification2.message)
+          )
       }
     }
   }

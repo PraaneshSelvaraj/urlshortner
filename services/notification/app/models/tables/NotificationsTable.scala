@@ -8,12 +8,13 @@ import java.sql.Timestamp
 class NotificationsTable(tag: Tag) extends Table[Notification](tag, "notifications"){
   def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def short_code: Rep[String] = column[String]("short_code")
-  def notificationType: Rep[String] = column[String]("notificationType")
+  def notification_type_id: Rep[Int] = column[Int]("notification_type_id")
   def message: Rep[String] = column[String]("message")
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
 
-  override def * : ProvenShape[Notification] = (id, short_code, notificationType, message, created_at, updated_at) <> ((Notification.apply _).tupled,Notification.unapply)
+  def notificationTypeFK = foreignKey("fk_notification_type", notification_type_id, NotificationTypesTable.notificationTypes)(_.id)
+  override def * : ProvenShape[Notification] = (id, short_code, notification_type_id, message, created_at, updated_at) <> ((Notification.apply _).tupled,Notification.unapply)
 }
 
 object NotificationsTable {

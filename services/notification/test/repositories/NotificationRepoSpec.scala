@@ -1,6 +1,7 @@
 package repositories
 
 import models.Notification
+import models.tables.{NotificationTypesTable, NotificationsTable}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -11,7 +12,6 @@ import play.api.Application
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.guice.GuiceApplicationBuilder
 import slick.jdbc.H2Profile.api._
-import models.tables.NotificationsTable
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -44,43 +44,60 @@ class NotificationRepoSpec
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(50, Millis))
 
+  private val db = dbConfigProvider.get.db
+
+  private lazy val (newUrlTypeId: Int, thresholdTypeId: Int) = {
+    val setup = for {
+      _ <- NotificationTypesTable.notificationTypes.schema.create
+      _ <- NotificationsTable.notifications.schema.create
+      _ <- NotificationTypesTable.notificationTypes += models.NotificationType(0, "NEWURL")
+      _ <- NotificationTypesTable.notificationTypes += models.NotificationType(0, "TRESHOLD")
+      newUrlId <- NotificationTypesTable.notificationTypes.filter(_.name === "NEWURL").map(_.id).result.head
+      thresholdId <- NotificationTypesTable.notificationTypes.filter(_.name === "TRESHOLD").map(_.id).result.head
+    } yield (newUrlId, thresholdId)
+
+    db.run(setup.transactionally).futureValue
+  }
+
   override def beforeAll(): Unit = {
     super.beforeAll()
-    val db = dbConfigProvider.get.db
-    db.run(NotificationsTable.notifications.schema.create).futureValue
+    (newUrlTypeId, thresholdTypeId)
   }
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    val db = dbConfigProvider.get.db
-    db.run(NotificationsTable.notifications.delete).futureValue
+    val clearDb = for {
+      _ <- NotificationsTable.notifications.delete
+    } yield ()
+
+    db.run(clearDb).futureValue
   }
 
   "NotificationRepo" should {
 
     "add a Notification" in {
-      val notification = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification = Notification(0L, "abc123", newUrlTypeId, "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
       whenReady(repo.addNotification(notification)) { result =>
         result shouldBe 1
       }
     }
 
     "get all notifications" in {
-      val n1 = Notification(0L, "abc123", "NEWURL", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val n2 = Notification(0L, "abc123", "TRESHOLD", "TRESHOLD REACHED", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val n1 = Notification(0L, "abc123", newUrlTypeId, "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val n2 = Notification(0L, "def456", thresholdTypeId, "TRESHOLD REACHED", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
 
       val result = for {
         _ <- repo.addNotification(n1)
         _ <- repo.addNotification(n2)
-        notifications <- repo.getNotifications
+        notifications <- repo.getNotificationsWithTypeName // Use the new method
       } yield notifications
 
       whenReady(result) { notifications =>
         notifications.length shouldBe 2
         notifications.map(n => (n.short_code, n.notificationType, n.message)) should contain theSameElementsAs
           Seq(
-            (n1.short_code, n1.notificationType, n1.message),
-            (n2.short_code, n2.notificationType, n2.message)
+            (n1.short_code, "NEWURL", n1.message),
+            (n2.short_code, "TRESHOLD", n2.message)
           )
       }
     }
