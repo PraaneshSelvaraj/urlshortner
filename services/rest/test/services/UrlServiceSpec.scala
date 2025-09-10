@@ -11,6 +11,7 @@ import play.api.Configuration
 import repositories.UrlRepo
 import example.urlshortner.notification.grpc.{GetNotificationsResponse, NotificationReply, NotificationRequest, NotificationServiceClient, NotificationType}
 import com.google.protobuf.empty.Empty
+import exceptions.TresholdReachedException
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -59,10 +60,10 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     }
 
       "redirect and send notification" in {
-        val threshold = 5
+        val treshold = 5
         when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
-        when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(threshold + 1))
-        when(mockConfig.get[Int]("notification.treshold")).thenReturn(threshold)
+        when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(1))
+        when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
         when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(Future.successful(NotificationReply(success = true, message = "Notification sent")))
 
         val result = urlService.redirect(sampleUrl.short_code)
@@ -70,9 +71,26 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         whenReady(result) { redirectedUrl =>
           redirectedUrl mustBe sampleUrl
           verify(mockUrlRepo).incrementUrlCount(sampleUrl.short_code)
-          verify(mockNotificationServiceClient).notifyMethod(any[NotificationRequest]())
+          verify(mockNotificationServiceClient, never).notifyMethod(any[NotificationRequest]())
         }
       }
+
+    "fail to redirect due to treshold" in {
+      val treshold = 5
+      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(treshold + 1))
+      when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
+      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(Future.successful(NotificationReply(success = true, message = "Notification sent")))
+
+      val result = urlService.redirect(sampleUrl.short_code)
+
+      whenReady(result.failed) {
+        ex =>
+          ex mustBe a[TresholdReachedException]
+          ex.getMessage mustBe "Treshold Reached for the url"
+      }
+
+    }
 
     "get Url by short code" in {
       when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))

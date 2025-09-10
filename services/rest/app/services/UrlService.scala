@@ -6,6 +6,7 @@ import models.{Notification, Url}
 import repositories.UrlRepo
 import example.urlshortner.notification.grpc.{GetNotificationsResponse, NotificationRequest, NotificationServiceClient, NotificationType}
 import com.google.protobuf.empty.Empty
+import exceptions.TresholdReachedException
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -53,6 +54,7 @@ class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: 
           val notification = NotificationRequest(notificationType = NotificationType.TRESHOLD, message = s"URL Crossed the Threshold for ${url.long_url}", shortCode = shortCode)
           val reply = notificationServiceClient.notifyMethod(notification)
           reply.map(r => println(s"Notification Status: ${r.success}, Notification Message: ${r.message}"))
+          Future.failed(new TresholdReachedException)
         }
         else {
           Future.successful(())

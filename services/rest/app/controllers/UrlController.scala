@@ -1,6 +1,7 @@
 package controllers
 
 import dtos.UrlDto
+import exceptions.TresholdReachedException
 import play.api.libs.json.Json
 import play.api.mvc._
 
@@ -32,6 +33,8 @@ class UrlController @Inject()(val controllerComponents: ControllerComponents, va
     }.recover {
       case _: NoSuchElementException =>
         NotFound(Json.obj("success" -> false, "message" -> s"URL with short code '$shortCode' not found"))
+      case _: TresholdReachedException =>
+        Forbidden(Json.obj(("success", false), "message" -> s"Treshold reached for the url with short code $shortCode"))
       case ex: Exception =>
         println(s"Error redirecting URL: ${ex.getMessage}")
         InternalServerError(Json.obj("success" -> false, "message" -> "Error processing redirect"))

@@ -3,6 +3,7 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import dtos.UrlDto
+import exceptions.TresholdReachedException
 import models.{Notification, Url}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -42,7 +43,6 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       contentAsJson(result) mustBe Json.obj(("message", "Url Created successfully"), ("data", urlAdded))
     }
 
-
     "return BadRequest when request body not json" in {
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
@@ -69,7 +69,6 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       redirectLocation(result) mustBe Some("http://example.com")
     }
 
-
     "return NotFound when shortCode not present in redirect" in {
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
@@ -80,6 +79,19 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.redirectUrl("unknown")(request)
 
       status(result) mustBe NOT_FOUND
+    }
+
+    "return Forbidden when treshold reached" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+
+      when(mockService.redirect(any[String]())).thenReturn(Future.failed(new TresholdReachedException))
+
+      val request = FakeRequest(GET, "/redirect/abc123")
+      val result = controller.redirectUrl("abc123")(request)
+
+      status(result) mustBe FORBIDDEN
+      contentAsJson(result) mustBe Json.obj(("success", false), ("message", "Treshold reached for the url with short code abc123"))
     }
 
     "get all Urls" in {
