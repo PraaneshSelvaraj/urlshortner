@@ -95,5 +95,20 @@ class UrlRepoSpec
         result shouldBe None
       }
     }
+
+    "delete url" in {
+      val url1 = Url(0L, "deleteTest", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val result = for {
+        _ <- repo.addUrl(url1)
+        rowsAffected <- repo.deleteUrlByShortCode(url1.short_code)
+        url <- repo.getUrlByShortcode(url1.short_code)
+      } yield (rowsAffected, url)
+
+      whenReady(result) {
+        case (rowsAffected, urlOpt) =>
+          rowsAffected shouldBe 1
+          urlOpt shouldBe None
+      }
+    }
   }
 }

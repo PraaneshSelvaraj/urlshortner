@@ -25,8 +25,7 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
 2.  **Build the Docker image for the Rest Service**:
     Before running the services, you need to build the Docker images for both the `rest-service` and `notification-service`
     ```sh
-    sbt "project rest-service" Docker/publishLocal
-    sbt "project notification-service" Docker/publishLocal
+    sbt Docker/publishLocal
     ```
     
 3.  **Run the application with Docker Compose**:
@@ -58,7 +57,8 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
                 "short_code": "5eQsiTg",
                 "long_url": "https://example.com/",
                 "clicks": 0,
-                "created_at": 1757139007000
+                "created_at": 1757139007000,
+                "updated_at": 1757139007000
             }
         }
         ```
@@ -84,15 +84,49 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
                 "short_code": "5eQsiTg",
                 "long_url": "https://example.com",
                 "clicks": 0,
-                "created_at": 1757139007000
+                "created_at": 1757139007000,
+                "updated_at": 1757139007000
             }
         ]
         }
         ```
+4. **Get Url By Short Code**
+    Retrieves a Url by shortcode
+    - URL: `/urls/5eQsiTg`
+    - Method: `GET`
+    - Response (200 OK):
+        ```json
+        {
+           "message": "Url with shortcode 5eQsiTg",
+           "data": {
+              "id": 1,
+              "short_code": "5eQsiTg",
+              "long_url": "https://example.com",
+              "clicks": 0,
+              "created_at": 1757139007000,
+              "updated_at": 1757139007000
+           }
+       }
+        ```
+    - Response (404 Not Found):
+        ```json
+        {
+           "message": "Unable to find Url with shortcode 5eQsiTg"
+        }
+        ```
 
-
-
-4. **Get All Notifications**
+5. **Delete Url By Short Code**
+    Deletes a Url by Short Code
+    - URL: `/urls/5eQsiTg`
+    - Method: `DELETE`
+    - Response (204 No Content)
+    - Response (404 Not Found):
+        ```json
+        {
+           "message": "Unable to find Url with shortcode 5eQsiTg"
+        }
+        ```
+6. **Get All Notifications**
     Retrieves All Notifications
     - URL: `/notifications`
     - Method: `GET`
@@ -105,6 +139,7 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
                     "id": 1,
                     "short_code": "5eQsiTg",
                     "notificationType": "NEWURL",
+                    "notificationStatus" : "SUCCESS",
                     "message": "URL Created for https://example.com/"
                 }
             ]

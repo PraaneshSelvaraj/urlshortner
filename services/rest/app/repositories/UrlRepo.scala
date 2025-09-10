@@ -29,6 +29,9 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
       db.run(urls.filter(_.id === id).result.head)
     }
 
+  def deleteUrlByShortCode(shortCode: String): Future[Int] =
+    db.run(urls.filter(_.short_code === shortCode).delete)
+
   def incrementUrlCount(shortCode: String): Future[Int] = {
     val query = urls.filter(_.short_code === shortCode)
     val action = for {

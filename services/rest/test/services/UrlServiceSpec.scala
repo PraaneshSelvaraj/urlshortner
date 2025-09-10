@@ -74,6 +74,89 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         }
       }
 
+    "get Url by short code" in {
+      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
+      val result = urlService.getUrlByShortCode(sampleUrl.short_code)
+
+      whenReady(result) {
+        urlOpt => urlOpt mustBe Some(sampleUrl)
+      }
+    }
+
+    "fail to get Url when short code not found" in {
+      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(None))
+      val result = urlService.getUrlByShortCode("notshortcode")
+
+      whenReady(result) {
+        urlOpt => urlOpt mustBe None
+      }
+    }
+
+    "get all Urls" in {
+      val url1 = Url(
+        id = 1L,
+        short_code = "abcdefg",
+        long_url = "https://www.example.com",
+        clicks = 0,
+        created_at = Timestamp.from(Instant.now()),
+        updated_at = Timestamp.from(Instant.now())
+      )
+
+      val url2 = Url(
+        id = 2L,
+        short_code = "test",
+        long_url = "https://www.youtube.com",
+        clicks = 6,
+        created_at = Timestamp.from(Instant.now()),
+        updated_at = Timestamp.from(Instant.now())
+      )
+
+      val url3 = Url(
+        id = 3L,
+        short_code = "sample",
+        long_url = "https://www.test.com",
+        clicks = 2,
+        created_at = Timestamp.from(Instant.now()),
+        updated_at = Timestamp.from(Instant.now())
+      )
+
+      when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq(url1, url2, url3)))
+
+      val result = urlService.getAllUrls
+
+      whenReady(result) {
+        urls =>
+          urls.length mustBe 3
+          urls mustBe Seq(url1, url2, url3)
+      }
+    }
+
+    "delete Url" in {
+      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(1))
+
+      val result = urlService.deleteUrlByShortCode(sampleUrl.short_code)
+
+      whenReady(result) {
+        rowsAffected =>
+          rowsAffected mustBe 1
+      }
+    }
+
+    "fail to delete Url when short code not found" in {
+      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(None))
+      when(mockUrlRepo.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(0))
+
+      val result = urlService.deleteUrlByShortCode("notshortcode")
+
+      whenReady(result.failed) {
+        ex =>
+          ex mustBe a[NoSuchElementException]
+          ex.getMessage mustBe "Unable to find Url with shortCode notshortcode"
+      }
+      verify(mockUrlRepo, never).deleteUrlByShortCode(any[String]())
+    }
+
     "get all notifications" in {
       val grpcNotifications = Seq(
         example.urlshortner.notification.grpc.Notification(

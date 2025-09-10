@@ -63,6 +63,19 @@ class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: 
 
   def getAllUrls: Future[Seq[Url]] = urlRepo.getAllUrls
 
+  def getUrlByShortCode(shortCode: String): Future[Option[Url]] = urlRepo.getUrlByShortcode(shortCode)
+
+  def deleteUrlByShortCode(shortCode: String): Future[Int] = {
+    for {
+      urlOpt <- urlRepo.getUrlByShortcode(shortCode)
+      url <- urlOpt match {
+        case Some(url) => Future.successful(url)
+        case None => Future.failed(new NoSuchElementException(s"Unable to find Url with shortCode $shortCode"))
+      }
+      rowsAffected <- urlRepo.deleteUrlByShortCode(url.short_code)
+    } yield rowsAffected
+  }
+
   def getNotifications: Future[Seq[Notification]] = {
     notificationServiceClient.getNotifications(Empty()) map {
       response: GetNotificationsResponse =>

@@ -1,6 +1,8 @@
 GET     /health                           controllers.HomeController.health()
 POST    /urls                             controllers.UrlController.addUrl()
 GET     /urls                             controllers.UrlController.getUrls()
+GET     /urls/:shortCode                  controllers.UrlController.getUrlByShortCode(shortCode: String)
+DELETE  /urls/:shortCode                  controllers.UrlController.deleteUrlByShortCode(shortCode: String)
 GET     /notifications                    controllers.UrlController.getNotifications()
 GET    /:shortCode                        controllers.UrlController.redirectUrl(shortCode: String)
 

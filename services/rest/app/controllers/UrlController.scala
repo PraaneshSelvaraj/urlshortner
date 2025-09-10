@@ -42,6 +42,25 @@ class UrlController @Inject()(val controllerComponents: ControllerComponents, va
     urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
   }
 
+  def getUrlByShortCode(shortCode: String): Action[AnyContent] = Action.async {implicit req: Request[AnyContent] =>
+    urlService.getUrlByShortCode(shortCode) map {
+      case Some(url) => Ok(Json.obj(("message", s"Url with shortcode $shortCode"), ("data", url)))
+      case None => NotFound(Json.obj(("message", s"Unable to find Url with shortcode $shortCode")))
+    }
+  }
+
+  def deleteUrlByShortCode(shortCode: String): Action[AnyContent] = Action.async {implicit req: Request[AnyContent] =>
+    urlService.deleteUrlByShortCode(shortCode).map(rowsAffected =>
+      if(rowsAffected <= 0 ) NotFound(Json.obj(("message", s"Unable to find Url with shortCode $shortCode")))
+      else NoContent
+    ).recover {
+      case _: NoSuchElementException => NotFound(Json.obj(("message", s"Unable to find Url with shortCode $shortCode")))
+      case ex: Exception =>
+        println(s"Error Deleting URL: ${ex.getMessage}")
+        InternalServerError(Json.obj("message" -> "Error processing redirect", "error" -> ex.getMessage))
+    }
+  }
+
   def getNotifications: Action[AnyContent] = Action.async {implicit req: Request[AnyContent] =>
     urlService.getNotifications map {
       notifications => Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))

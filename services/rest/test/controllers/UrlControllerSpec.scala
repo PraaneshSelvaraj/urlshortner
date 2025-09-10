@@ -70,7 +70,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     }
 
 
-    "return NotFound when shortCode not present" in {
+    "return NotFound when shortCode not present in redirect" in {
       val mockService = mock[UrlService]
       val controller = new UrlController(stubControllerComponents, mockService)
 
@@ -95,6 +95,73 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
 
       status(result) mustBe OK
       contentAsJson(result) mustBe Json.obj("message" -> "List of Urls", "urls" -> Json.arr(Json.toJson(url)))
+    }
+
+    "get url by short code" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+
+      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      when(mockService.getUrlByShortCode(any[String]())).thenReturn(Future.successful(Some(url)))
+
+      val request = FakeRequest(GET, "/urls/abc123")
+      val result = controller.getUrlByShortCode("abc123")(request)
+
+      status(result) mustBe OK
+      contentAsJson(result) mustBe Json.obj(("message", "Url with shortcode abc123"), ("data", url))
+    }
+
+    "fail to get url when short code not found" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+
+      when(mockService.getUrlByShortCode(any[String]())).thenReturn(Future.successful(None))
+
+      val request =  FakeRequest(GET, "/urls/notshortcode")
+      val result = controller.getUrlByShortCode("notshortcode")(request)
+
+      status(result) mustBe NOT_FOUND
+      contentAsJson(result) mustBe Json.obj(("message", "Unable to find Url with shortcode notshortcode"))
+    }
+
+    "delete a url" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+
+      when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(1))
+
+      val request = FakeRequest(DELETE, "/urls/abc123")
+      val result = controller.deleteUrlByShortCode("abc123")(request)
+
+      status(result) mustBe NO_CONTENT
+    }
+
+    "fail to delete url when exception raised" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+      val exec = new NoSuchElementException("Unable to find Url with shortcode abc123")
+
+      when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.failed(exec))
+
+      val request = FakeRequest(DELETE, "/urls/abc123")
+      val result = controller.deleteUrlByShortCode("abc123")(request)
+
+      status(result) mustBe NOT_FOUND
+      contentAsJson(result) mustBe Json.obj(("message", s"Unable to find Url with shortCode abc123"))
+    }
+
+    "fail to delete url due to db issue" in {
+      val mockService = mock[UrlService]
+      val controller = new UrlController(stubControllerComponents, mockService)
+
+      when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(0))
+
+      val request = FakeRequest(DELETE, "/urls/abc123")
+      val result = controller.deleteUrlByShortCode("abc123")(request)
+
+      status(result) mustBe NOT_FOUND
+      contentAsJson(result) mustBe Json.obj(("message", s"Unable to find Url with shortCode abc123"))
+
     }
 
     "get all notifications" in {
