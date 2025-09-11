@@ -149,6 +149,17 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       }
     }
 
+    "return empty seq when no Urls found" in {
+      when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq.empty))
+      val result = urlService.getAllUrls
+
+      whenReady(result) {
+        urls =>
+          urls.length mustBe 0
+          urls mustBe Seq.empty
+      }
+    }
+
     "delete Url" in {
       when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
       when(mockUrlRepo.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(1))

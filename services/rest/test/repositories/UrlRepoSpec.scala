@@ -84,9 +84,36 @@ class UrlRepoSpec
       }
     }
 
+    "return Url by Id" in {
+      val url = Url(0L, "a49g5a", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+
+      val result = for {
+        urlAdded <- repo.addUrl(url)
+        urlOpt <- repo.getUrlById(urlAdded.id)
+      } yield (urlAdded, urlOpt)
+
+      whenReady(result) { case (urlAdded, urlOpt) =>
+        urlOpt shouldBe Some(urlAdded)
+      }
+    }
+
     "return none when searching non having id" in {
       whenReady(repo.getUrlById(9999)) { result =>
         result shouldBe None
+      }
+    }
+
+    "return Url by ShortCode" in {
+      val url = Url(0L, "eg123", "https://example.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+
+      val result = for {
+        urlAdded <- repo.addUrl(url)
+        urlOpt <- repo.getUrlByShortcode(urlAdded.short_code)
+      } yield (urlAdded, urlOpt)
+
+      whenReady(result) {
+        case (urlAdded, urlOpt) =>
+          urlOpt shouldBe Some(urlAdded)
       }
     }
 
