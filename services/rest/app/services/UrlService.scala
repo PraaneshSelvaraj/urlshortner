@@ -12,7 +12,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class UrlService @Inject()(val urlRepo: UrlRepo, val notificationServiceClient: NotificationServiceClient, config: Configuration)(implicit ec: ExecutionContext) {
+class UrlService @Inject()(urlRepo: UrlRepo, notificationServiceClient: NotificationServiceClient, config: Configuration)(implicit ec: ExecutionContext) {
 
   def addUrl(urlData: UrlDto): Future[Url] = {
     for {

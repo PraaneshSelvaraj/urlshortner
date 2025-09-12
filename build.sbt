@@ -60,6 +60,7 @@ lazy val `rest-service` = (project in file("services/rest"))
       "com.typesafe.play" %% "play-slick" % "5.4.0",
       "com.typesafe.play" %% "play-slick-evolutions" % "5.4.0",
       "mysql" % "mysql-connector-java" % "8.0.33",
+      "io.lettuce" % "lettuce-core" % "6.8.1.RELEASE",
       "org.apache.pekko" %% "pekko-discovery" % pekkoVersion,
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
       "com.h2database" % "h2" % "2.3.232" % Test,

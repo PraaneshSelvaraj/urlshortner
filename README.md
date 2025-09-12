@@ -8,6 +8,7 @@ A URL Shortner made with Play Framework using Scala. It provides a REST API to s
 * **MYSQL**: For database.
 * **gRPC**: For micro-service communication with the notification service.
 * **Docker**: For running the application as containers.
+* **Redis**: For rate limiting.
 
 ---
 

@@ -20,6 +20,14 @@ services:
     depends_on:
       - mysql
 
+  redis:
+    image: redis:latest
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
   rest:
     image: rest-service:1.0.0
     container_name: rest-service
@@ -27,6 +35,8 @@ services:
       - "9000:9000"
     depends_on:
       - mysql
+      - redis
 
 volumes:
   mysql-data:
+  redis-data:

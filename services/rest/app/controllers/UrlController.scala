@@ -1,5 +1,6 @@
 package controllers
 
+import actions.RateLimiterAction
 import dtos.UrlDto
 import exceptions.TresholdReachedException
 import play.api.libs.json.Json
@@ -9,7 +10,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import services.UrlService
 
-class UrlController @Inject()(val controllerComponents: ControllerComponents, val urlService: UrlService)(implicit ec: ExecutionContext)  extends BaseController{
+class UrlController @Inject()(val controllerComponents: ControllerComponents, urlService: UrlService, rateLimiter: RateLimiterAction)(implicit ec: ExecutionContext) extends BaseController {
 
   def addUrl(): Action[AnyContent] = Action.async {implicit request: Request[AnyContent] =>
     request.body.asJson match {
@@ -27,7 +28,7 @@ class UrlController @Inject()(val controllerComponents: ControllerComponents, va
     }
   }
 
-  def redirectUrl(shortCode: String): Action[AnyContent] = Action.async { implicit request =>
+  def redirectUrl(shortCode: String): Action[AnyContent] = rateLimiter.async { implicit request =>
     urlService.redirect(shortCode).map { url =>
       Redirect(url.long_url, TEMPORARY_REDIRECT)
     }.recover {
