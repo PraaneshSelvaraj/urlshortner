@@ -8,7 +8,7 @@ import java.time.Instant
 import scala.jdk.FutureConverters._
 
 @Singleton
-class RedisService @Inject()(config: Configuration)(implicit ec: ExecutionContext) {
+class RedisService @Inject() (config: Configuration)(implicit ec: ExecutionContext) {
 
   private val host = config.get[String]("redis.host")
   private val port = config.get[Int]("redis.port")
@@ -28,13 +28,19 @@ class RedisService @Inject()(config: Configuration)(implicit ec: ExecutionContex
     val member = now.toString
 
     for {
-      _ <- redis.zremrangebyscore(key, Range.create(Double.NegativeInfinity, windowStart.toDouble)).asScala
-      currentCount <- redis.zcount(key, Range.create(windowStart.toDouble, Double.PositiveInfinity)).asScala
+      _ <- redis
+        .zremrangebyscore(key, Range.create(Double.NegativeInfinity, windowStart.toDouble))
+        .asScala
+      currentCount <- redis
+        .zcount(key, Range.create(windowStart.toDouble, Double.PositiveInfinity))
+        .asScala
       allowed = currentCount < limit
-      _ <- if (allowed) for {
-        _ <- redis.zadd(key, now.toDouble, member).asScala
-        _ <- redis.expire(key, windowSeconds * 3).asScala
-      } yield () else Future.successful(())
+      _ <-
+        if (allowed) for {
+          _ <- redis.zadd(key, now.toDouble, member).asScala
+          _ <- redis.expire(key, windowSeconds * 3).asScala
+        } yield ()
+        else Future.successful(())
     } yield allowed
   }
 

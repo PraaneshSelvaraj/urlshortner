@@ -23,5 +23,8 @@ jobs:
       - name: Set up sbt
         uses: sbt/setup-sbt@v1
 
+      - name: Check code formatting
+        run: sbt scalafmtCheckAll
+
       - name: Run tests
         run: sbt test

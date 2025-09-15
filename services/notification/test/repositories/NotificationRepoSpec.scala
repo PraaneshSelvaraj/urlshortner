@@ -18,7 +18,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 
 class NotificationRepoSpec
-  extends AnyWordSpec
+    extends AnyWordSpec
     with Matchers
     with ScalaFutures
     with GuiceOneAppPerSuite
@@ -46,7 +46,13 @@ class NotificationRepoSpec
 
   private val db = dbConfigProvider.get.db
 
-  private lazy val (newUrlTypeId: Int, thresholdTypeId: Int, successStatusId: Int, pendingStatusId: Int, failureStatusId: Int) = {
+  private lazy val (
+    newUrlTypeId: Int,
+    thresholdTypeId: Int,
+    successStatusId: Int,
+    pendingStatusId: Int,
+    failureStatusId: Int
+  ) = {
     val setup = for {
       _ <- NotificationTypesTable.notificationTypes.schema.create
       _ <- NotificationsTable.notifications.schema.create
@@ -57,11 +63,31 @@ class NotificationRepoSpec
       _ <- NotificationStatusesTable.notificationStatuses += models.NotificationStatus(0, "PENDING")
       _ <- NotificationStatusesTable.notificationStatuses += models.NotificationStatus(0, "FAILURE")
 
-      newUrlId <- NotificationTypesTable.notificationTypes.filter(_.name === "NEWURL").map(_.id).result.head
-      thresholdId <- NotificationTypesTable.notificationTypes.filter(_.name === "TRESHOLD").map(_.id).result.head
-      successId <- NotificationStatusesTable.notificationStatuses.filter(_.name === "SUCCESS").map(_.id).result.head
-      pendingId <- NotificationStatusesTable.notificationStatuses.filter(_.name === "PENDING").map(_.id).result.head
-      failureId <- NotificationStatusesTable.notificationStatuses.filter(_.name === "FAILURE").map(_.id).result.head
+      newUrlId <- NotificationTypesTable.notificationTypes
+        .filter(_.name === "NEWURL")
+        .map(_.id)
+        .result
+        .head
+      thresholdId <- NotificationTypesTable.notificationTypes
+        .filter(_.name === "TRESHOLD")
+        .map(_.id)
+        .result
+        .head
+      successId <- NotificationStatusesTable.notificationStatuses
+        .filter(_.name === "SUCCESS")
+        .map(_.id)
+        .result
+        .head
+      pendingId <- NotificationStatusesTable.notificationStatuses
+        .filter(_.name === "PENDING")
+        .map(_.id)
+        .result
+        .head
+      failureId <- NotificationStatusesTable.notificationStatuses
+        .filter(_.name === "FAILURE")
+        .map(_.id)
+        .result
+        .head
     } yield (newUrlId, thresholdId, successId, pendingId, failureId)
 
     db.run(setup.transactionally).futureValue
@@ -84,16 +110,48 @@ class NotificationRepoSpec
   "NotificationRepo" should {
 
     "add a Notification" in {
-      val notification = Notification(0L, "abc123", newUrlTypeId, successStatusId, "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification = Notification(
+        0L,
+        "abc123",
+        newUrlTypeId,
+        successStatusId,
+        "Created new url",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
       whenReady(repo.addNotification(notification)) { result =>
         result shouldBe 1
       }
     }
 
     "get all notifications" in {
-      val n1 = Notification(0L, "abc123", newUrlTypeId, successStatusId, "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val n2 = Notification(0L, "def456", newUrlTypeId, pendingStatusId, "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val n3 = Notification(0L, "def456", thresholdTypeId, failureStatusId, "TRESHOLD REACHED", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val n1 = Notification(
+        0L,
+        "abc123",
+        newUrlTypeId,
+        successStatusId,
+        "Created new url",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
+      val n2 = Notification(
+        0L,
+        "def456",
+        newUrlTypeId,
+        pendingStatusId,
+        "Created new url",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
+      val n3 = Notification(
+        0L,
+        "def456",
+        thresholdTypeId,
+        failureStatusId,
+        "TRESHOLD REACHED",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       val result = for {
         _ <- repo.addNotification(n1)
@@ -104,11 +162,13 @@ class NotificationRepoSpec
 
       whenReady(result) { notifications =>
         notifications.length shouldBe 3
-        notifications.map(n => (n.short_code, n.notificationType, n.notificationStatus, n.message)) should contain theSameElementsAs
+        notifications.map(n =>
+          (n.short_code, n.notificationType, n.notificationStatus, n.message)
+        ) should contain theSameElementsAs
           Seq(
             (n1.short_code, "NEWURL", "SUCCESS", n1.message),
             (n2.short_code, "NEWURL", "PENDING", n2.message),
-            (n3.short_code, "TRESHOLD", "FAILURE", n3.message),
+            (n3.short_code, "TRESHOLD", "FAILURE", n3.message)
           )
       }
     }

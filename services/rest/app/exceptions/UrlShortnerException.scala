@@ -1,3 +1,3 @@
 package exceptions
 
-trait UrlShortnerException extends  Exception
+trait UrlShortnerException extends Exception

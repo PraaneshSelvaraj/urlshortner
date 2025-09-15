@@ -9,7 +9,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import repositories.UrlRepo
-import example.urlshortner.notification.grpc.{GetNotificationsResponse, NotificationReply, NotificationRequest, NotificationServiceClient, NotificationType}
+import example.urlshortner.notification.grpc.{
+  GetNotificationsResponse,
+  NotificationReply,
+  NotificationRequest,
+  NotificationServiceClient,
+  NotificationType
+}
 import com.google.protobuf.empty.Empty
 import exceptions.TresholdReachedException
 
@@ -44,11 +50,12 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
   "UrlService" should {
 
-
     "add a new URL and send a notification" in {
       when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(None))
       when(mockUrlRepo.addUrl(any[Url]())).thenReturn(Future.successful(sampleUrl))
-      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(Future.successful(NotificationReply(success = true, message = "Notification sent")))
+      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(
+        Future.successful(NotificationReply(success = true, message = "Notification sent"))
+      )
 
       val result = urlService.addUrl(sampleUrlDto)
 
@@ -59,45 +66,51 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       }
     }
 
-      "redirect and send notification" in {
-        val treshold = 5
-        when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
-        when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(1))
-        when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
-        when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(Future.successful(NotificationReply(success = true, message = "Notification sent")))
-
-        val result = urlService.redirect(sampleUrl.short_code)
-
-        whenReady(result) { redirectedUrl =>
-          redirectedUrl mustBe sampleUrl
-          verify(mockUrlRepo).incrementUrlCount(sampleUrl.short_code)
-          verify(mockNotificationServiceClient, never).notifyMethod(any[NotificationRequest]())
-        }
-      }
-
-    "fail to redirect due to treshold" in {
+    "redirect and send notification" in {
       val treshold = 5
-      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
-      when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(treshold + 1))
+      when(mockUrlRepo.getUrlByShortcode(any[String]()))
+        .thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(1))
       when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
-      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(Future.successful(NotificationReply(success = true, message = "Notification sent")))
+      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(
+        Future.successful(NotificationReply(success = true, message = "Notification sent"))
+      )
 
       val result = urlService.redirect(sampleUrl.short_code)
 
-      whenReady(result.failed) {
-        ex =>
-          ex mustBe a[TresholdReachedException]
-          ex.getMessage mustBe "Treshold Reached for the url"
+      whenReady(result) { redirectedUrl =>
+        redirectedUrl mustBe sampleUrl
+        verify(mockUrlRepo).incrementUrlCount(sampleUrl.short_code)
+        verify(mockNotificationServiceClient, never).notifyMethod(any[NotificationRequest]())
+      }
+    }
+
+    "fail to redirect due to treshold" in {
+      val treshold = 5
+      when(mockUrlRepo.getUrlByShortcode(any[String]()))
+        .thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(treshold + 1))
+      when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
+      when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(
+        Future.successful(NotificationReply(success = true, message = "Notification sent"))
+      )
+
+      val result = urlService.redirect(sampleUrl.short_code)
+
+      whenReady(result.failed) { ex =>
+        ex mustBe a[TresholdReachedException]
+        ex.getMessage mustBe "Treshold Reached for the url"
       }
 
     }
 
     "get Url by short code" in {
-      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.getUrlByShortcode(any[String]()))
+        .thenReturn(Future.successful(Some(sampleUrl)))
       val result = urlService.getUrlByShortCode(sampleUrl.short_code)
 
-      whenReady(result) {
-        urlOpt => urlOpt mustBe Some(sampleUrl)
+      whenReady(result) { urlOpt =>
+        urlOpt mustBe Some(sampleUrl)
       }
     }
 
@@ -105,8 +118,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(None))
       val result = urlService.getUrlByShortCode("notshortcode")
 
-      whenReady(result) {
-        urlOpt => urlOpt mustBe None
+      whenReady(result) { urlOpt =>
+        urlOpt mustBe None
       }
     }
 
@@ -142,10 +155,9 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
       val result = urlService.getAllUrls
 
-      whenReady(result) {
-        urls =>
-          urls.length mustBe 3
-          urls mustBe Seq(url1, url2, url3)
+      whenReady(result) { urls =>
+        urls.length mustBe 3
+        urls mustBe Seq(url1, url2, url3)
       }
     }
 
@@ -153,22 +165,21 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq.empty))
       val result = urlService.getAllUrls
 
-      whenReady(result) {
-        urls =>
-          urls.length mustBe 0
-          urls mustBe Seq.empty
+      whenReady(result) { urls =>
+        urls.length mustBe 0
+        urls mustBe Seq.empty
       }
     }
 
     "delete Url" in {
-      when(mockUrlRepo.getUrlByShortcode(any[String]())).thenReturn(Future.successful(Some(sampleUrl)))
+      when(mockUrlRepo.getUrlByShortcode(any[String]()))
+        .thenReturn(Future.successful(Some(sampleUrl)))
       when(mockUrlRepo.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(1))
 
       val result = urlService.deleteUrlByShortCode(sampleUrl.short_code)
 
-      whenReady(result) {
-        rowsAffected =>
-          rowsAffected mustBe 1
+      whenReady(result) { rowsAffected =>
+        rowsAffected mustBe 1
       }
     }
 
@@ -178,10 +189,9 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
       val result = urlService.deleteUrlByShortCode("notshortcode")
 
-      whenReady(result.failed) {
-        ex =>
-          ex mustBe a[NoSuchElementException]
-          ex.getMessage mustBe "Unable to find Url with shortCode notshortcode"
+      whenReady(result.failed) { ex =>
+        ex mustBe a[NoSuchElementException]
+        ex.getMessage mustBe "Unable to find Url with shortCode notshortcode"
       }
       verify(mockUrlRepo, never).deleteUrlByShortCode(any[String]())
     }
@@ -196,7 +206,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         )
       )
       val grpcResponse = GetNotificationsResponse(notifications = grpcNotifications)
-      when(mockNotificationServiceClient.getNotifications(any[Empty]())).thenReturn(Future.successful(grpcResponse))
+      when(mockNotificationServiceClient.getNotifications(any[Empty]()))
+        .thenReturn(Future.successful(grpcResponse))
 
       val result = urlService.getNotifications
 

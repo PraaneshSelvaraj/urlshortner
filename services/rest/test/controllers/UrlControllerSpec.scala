@@ -35,7 +35,14 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
-      val urlAdded = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val urlAdded = Url(
+        1L,
+        "abc123",
+        "http://example.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       when(mockService.addUrl(any[UrlDto])) thenReturn Future.successful(urlAdded)
 
@@ -44,7 +51,10 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.addUrl()(request)
 
       status(result) mustBe CREATED
-      contentAsJson(result) mustBe Json.obj(("message", "Url Created successfully"), ("data", urlAdded))
+      contentAsJson(result) mustBe Json.obj(
+        ("message", "Url Created successfully"),
+        ("data", urlAdded)
+      )
     }
 
     "return BadRequest when request body not json" in {
@@ -63,13 +73,26 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val mockRedisService = mock[RedisService]
       val defaultBodyParser = new BodyParsers.Default()(mat)
-      val rateLimiterAction = new RateLimiterAction(mockRedisService, mockConfig, defaultBodyParser, stubControllerComponents)(ExecutionContext.global)
+      val rateLimiterAction = new RateLimiterAction(
+        mockRedisService,
+        mockConfig,
+        defaultBodyParser,
+        stubControllerComponents
+      )(ExecutionContext.global)
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        1L,
+        "abc123",
+        "http://example.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       when(mockService.redirect("abc123")) thenReturn Future.successful(url)
-      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]())).thenReturn(Future.successful(true))
+      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]()))
+        .thenReturn(Future.successful(true))
 
       val request = FakeRequest(GET, "/abc123")
       val result = controller.redirectUrl("abc123")(request)
@@ -82,11 +105,19 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val mockRedisService = mock[RedisService]
       val defaultBodyParser = new BodyParsers.Default()(mat)
-      val rateLimiterAction = new RateLimiterAction(mockRedisService, mockConfig, defaultBodyParser, stubControllerComponents)(ExecutionContext.global)
+      val rateLimiterAction = new RateLimiterAction(
+        mockRedisService,
+        mockConfig,
+        defaultBodyParser,
+        stubControllerComponents
+      )(ExecutionContext.global)
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      when(mockService.redirect("unknown")) thenReturn Future.failed(new NoSuchElementException("Not found"))
-      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]())).thenReturn(Future.successful(true))
+      when(mockService.redirect("unknown")) thenReturn Future.failed(
+        new NoSuchElementException("Not found")
+      )
+      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]()))
+        .thenReturn(Future.successful(true))
 
       val request = FakeRequest(GET, "/unknown")
       val result = controller.redirectUrl("unknown")(request)
@@ -98,27 +129,43 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val mockService = mock[UrlService]
       val mockRedisService = mock[RedisService]
       val defaultBodyParser = new BodyParsers.Default()(mat)
-      val rateLimiterAction = new RateLimiterAction(mockRedisService, mockConfig, defaultBodyParser, stubControllerComponents)(ExecutionContext.global)
+      val rateLimiterAction = new RateLimiterAction(
+        mockRedisService,
+        mockConfig,
+        defaultBodyParser,
+        stubControllerComponents
+      )(ExecutionContext.global)
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      when(mockService.redirect(any[String]())).thenReturn(Future.failed(new TresholdReachedException))
-      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]())).thenReturn(Future.successful(true))
+      when(mockService.redirect(any[String]()))
+        .thenReturn(Future.failed(new TresholdReachedException))
+      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]()))
+        .thenReturn(Future.successful(true))
 
       val request = FakeRequest(GET, "/abc123")
       val result = controller.redirectUrl("abc123")(request)
 
       status(result) mustBe FORBIDDEN
-      contentAsJson(result) mustBe Json.obj(("success", false), ("message", "Treshold reached for the url with short code abc123"))
+      contentAsJson(result) mustBe Json.obj(
+        ("success", false),
+        ("message", "Treshold reached for the url with short code abc123")
+      )
     }
 
     "not allow request when rate limit exceeded" in {
       val mockService = mock[UrlService]
       val mockRedisService = mock[RedisService]
       val defaultBodyParser = new BodyParsers.Default()(mat)
-      val rateLimiterAction = new RateLimiterAction(mockRedisService, mockConfig, defaultBodyParser, stubControllerComponents)(ExecutionContext.global)
+      val rateLimiterAction = new RateLimiterAction(
+        mockRedisService,
+        mockConfig,
+        defaultBodyParser,
+        stubControllerComponents
+      )(ExecutionContext.global)
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]())).thenReturn(Future.successful(false))
+      when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]()))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/shortCode")
       val result = controller.redirectUrl("shortCode")(request)
@@ -132,7 +179,14 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val rateLimiterAction = mock[RateLimiterAction]
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        1L,
+        "abc123",
+        "http://example.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       when(mockService.getAllUrls) thenReturn Future.successful(Seq(url))
 
@@ -140,7 +194,10 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.getUrls(request)
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("message" -> "List of Urls", "urls" -> Json.arr(Json.toJson(url)))
+      contentAsJson(result) mustBe Json.obj(
+        "message" -> "List of Urls",
+        "urls" -> Json.arr(Json.toJson(url))
+      )
     }
 
     "get url by short code" in {
@@ -148,7 +205,14 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val rateLimiterAction = mock[RateLimiterAction]
       val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
 
-      val url = Url(1L, "abc123", "http://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        1L,
+        "abc123",
+        "http://example.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
       when(mockService.getUrlByShortCode(any[String]())).thenReturn(Future.successful(Some(url)))
 
       val request = FakeRequest(GET, "/urls/abc123")
@@ -169,7 +233,9 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.getUrlByShortCode("notshortcode")(request)
 
       status(result) mustBe NOT_FOUND
-      contentAsJson(result) mustBe Json.obj(("message", "Unable to find Url with shortcode notshortcode"))
+      contentAsJson(result) mustBe Json.obj(
+        ("message", "Unable to find Url with shortcode notshortcode")
+      )
     }
 
     "delete a url" in {
@@ -197,7 +263,9 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.deleteUrlByShortCode("abc123")(request)
 
       status(result) mustBe NOT_FOUND
-      contentAsJson(result) mustBe Json.obj(("message", s"Unable to find Url with shortCode abc123"))
+      contentAsJson(result) mustBe Json.obj(
+        ("message", s"Unable to find Url with shortCode abc123")
+      )
     }
 
     "fail to delete url due to db issue" in {
@@ -210,7 +278,9 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.deleteUrlByShortCode("abc123")(request)
 
       status(result) mustBe NOT_FOUND
-      contentAsJson(result) mustBe Json.obj(("message", s"Unable to find Url with shortCode abc123"))
+      contentAsJson(result) mustBe Json.obj(
+        ("message", s"Unable to find Url with shortCode abc123")
+      )
 
     }
 
@@ -242,7 +312,10 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       val result = controller.getNotifications(request)
 
       status(result) mustBe OK
-      contentAsJson(result) mustBe Json.obj("message" -> "List of all Notifications", "notifications" -> notifications)
+      contentAsJson(result) mustBe Json.obj(
+        "message" -> "List of all Notifications",
+        "notifications" -> notifications
+      )
     }
   }
 }

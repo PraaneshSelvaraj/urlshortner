@@ -13,11 +13,7 @@ import java.sql.Timestamp
 import java.time.Instant
 import org.scalatest.time.{Millis, Seconds, Span}
 
-class UrlRepoSpec
-  extends AnyWordSpec
-    with Matchers
-    with ScalaFutures
-    with GuiceOneAppPerSuite {
+class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with GuiceOneAppPerSuite {
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
@@ -43,7 +39,14 @@ class UrlRepoSpec
   "UrlRepo" should {
 
     "add and get a URL" in {
-      val url = Url(0L, "abc123", "https://example.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        0L,
+        "abc123",
+        "https://example.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       val result = for {
         inserted <- repo.addUrl(url)
@@ -57,7 +60,14 @@ class UrlRepoSpec
     }
 
     "increment clicks" in {
-      val url = Url(0L, "xyz789", "https://test.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        0L,
+        "xyz789",
+        "https://test.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       val result = for {
         _ <- repo.addUrl(url)
@@ -72,20 +82,41 @@ class UrlRepoSpec
     }
 
     "get all Urls" in {
-      val url1 = Url(0L, "code1", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val url2 = Url(0L, "code2", "https://playframework.com", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url1 = Url(
+        0L,
+        "code1",
+        "https://scala-lang.org",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
+      val url2 = Url(
+        0L,
+        "code2",
+        "https://playframework.com",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       whenReady(repo.addUrl(url1)) { _ =>
         whenReady(repo.addUrl(url2)) { _ =>
           whenReady(repo.getAllUrls) { urls =>
-            urls.map(_.short_code) should contain allOf("code1", "code2")
+            urls.map(_.short_code) should contain allOf ("code1", "code2")
           }
         }
       }
     }
 
     "return Url by Id" in {
-      val url = Url(0L, "a49g5a", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        0L,
+        "a49g5a",
+        "https://scala-lang.org",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       val result = for {
         urlAdded <- repo.addUrl(url)
@@ -104,16 +135,22 @@ class UrlRepoSpec
     }
 
     "return Url by ShortCode" in {
-      val url = Url(0L, "eg123", "https://example.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url = Url(
+        0L,
+        "eg123",
+        "https://example.org",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       val result = for {
         urlAdded <- repo.addUrl(url)
         urlOpt <- repo.getUrlByShortcode(urlAdded.short_code)
       } yield (urlAdded, urlOpt)
 
-      whenReady(result) {
-        case (urlAdded, urlOpt) =>
-          urlOpt shouldBe Some(urlAdded)
+      whenReady(result) { case (urlAdded, urlOpt) =>
+        urlOpt shouldBe Some(urlAdded)
       }
     }
 
@@ -124,17 +161,23 @@ class UrlRepoSpec
     }
 
     "delete url" in {
-      val url1 = Url(0L, "deleteTest", "https://scala-lang.org", 0, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val url1 = Url(
+        0L,
+        "deleteTest",
+        "https://scala-lang.org",
+        0,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
       val result = for {
         _ <- repo.addUrl(url1)
         rowsAffected <- repo.deleteUrlByShortCode(url1.short_code)
         url <- repo.getUrlByShortcode(url1.short_code)
       } yield (rowsAffected, url)
 
-      whenReady(result) {
-        case (rowsAffected, urlOpt) =>
-          rowsAffected shouldBe 1
-          urlOpt shouldBe None
+      whenReady(result) { case (rowsAffected, urlOpt) =>
+        rowsAffected shouldBe 1
+        urlOpt shouldBe None
       }
     }
   }

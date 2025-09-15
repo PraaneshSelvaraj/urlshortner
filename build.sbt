@@ -12,7 +12,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val root = (project in file("."))
-  .aggregate(`notification-service`,  `rest-service`)
+  .aggregate(`notification-service`, `rest-service`)
   .settings(commonSettings *)
   .settings(
     name := "url-shortner",
@@ -38,7 +38,7 @@ lazy val `notification-service` = (project in file("services/notification"))
       "com.h2database" % "h2" % "2.3.232" % Test,
       "org.mockito" %% "mockito-scala" % "2.0.0" % Test
     ),
-    Docker / dockerAlias := DockerAlias(None, None, "notification-service", Some("1.0.0")),
+    Docker / dockerAlias := DockerAlias(None, None, "notification-service", Some("1.0.0"))
   )
 
 lazy val `rest-service` = (project in file("services/rest"))
@@ -50,7 +50,7 @@ lazy val `rest-service` = (project in file("services/rest"))
     pekkoGrpcGeneratedLanguages := Seq(PekkoGrpc.Scala),
     pekkoGrpcExtraGenerators += PlayScalaClientCodeGenerator,
     Compile / PB.protoSources ++= Seq(
-      baseDirectory.value / ".." / "notification" / "app" / "protobuf",
+      baseDirectory.value / ".." / "notification" / "app" / "protobuf"
     ),
     libraryDependencies ++= Seq(
       guice,
@@ -66,5 +66,5 @@ lazy val `rest-service` = (project in file("services/rest"))
       "com.h2database" % "h2" % "2.3.232" % Test,
       "org.mockito" %% "mockito-scala" % "2.0.0" % Test
     ),
-    Docker / dockerAlias := DockerAlias(None, None, "rest-service", Some("1.0.0")),
+    Docker / dockerAlias := DockerAlias(None, None, "rest-service", Some("1.0.0"))
   )

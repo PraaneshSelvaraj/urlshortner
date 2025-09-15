@@ -14,7 +14,14 @@ class UrlsTable(tag: Tag) extends Table[Url](tag, "urls") {
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
 
-  override def * :ProvenShape[Url] = (id, short_code, long_url, clicks, created_at, updated_at) <> ((Url.apply _).tupled, Url.unapply)
+  override def * : ProvenShape[Url] = (
+    id,
+    short_code,
+    long_url,
+    clicks,
+    created_at,
+    updated_at
+  ) <> ((Url.apply _).tupled, Url.unapply)
 }
 
 object UrlsTable {

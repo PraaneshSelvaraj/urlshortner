@@ -96,8 +96,24 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val mockRepo = mock[NotificationRepo]
       val router = new NotificationRouter(mat, system, mockRepo)
 
-      val notification1 = NotificationDTO(1L, "abc123", "NEWURL", "SUCCESS", "Created new url", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
-      val notification2 = NotificationDTO(2L, "def456", "TRESHOLD", "FAILURE", "Threshold reached", Timestamp.from(Instant.now()), Timestamp.from(Instant.now()))
+      val notification1 = NotificationDTO(
+        1L,
+        "abc123",
+        "NEWURL",
+        "SUCCESS",
+        "Created new url",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
+      val notification2 = NotificationDTO(
+        2L,
+        "def456",
+        "TRESHOLD",
+        "FAILURE",
+        "Threshold reached",
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now())
+      )
 
       when(mockRepo.getNotifications)
         .thenReturn(Future.successful(Seq(notification1, notification2)))
@@ -106,7 +122,9 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
 
       whenReady(result) { response =>
         response.notifications.length shouldBe 2
-        response.notifications.map(n => (n.shortCode, n.notificationType.toString, n.message)) should contain theSameElementsAs
+        response.notifications.map(n =>
+          (n.shortCode, n.notificationType.toString, n.message)
+        ) should contain theSameElementsAs
           Seq(
             (notification1.short_code, notification1.notificationType, notification1.message),
             (notification2.short_code, notification2.notificationType, notification2.message)

@@ -24,3 +24,7 @@ Thumbs.db
 
 logs/
 tmp/
+
+.bsp/
+.bloop/
+.metals

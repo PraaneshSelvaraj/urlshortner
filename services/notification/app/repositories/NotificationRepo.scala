@@ -10,7 +10,9 @@ import slick.jdbc.JdbcProfile
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+    ec: ExecutionContext
+) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import dbConfig.profile.api._
@@ -23,7 +25,7 @@ class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
     notificationStatuses.filter(_.name === name).map(_.id).result.headOption
   )
 
-  def addNotification(notification: Notification):Future[Int] = dbConfig.db.run(
+  def addNotification(notification: Notification): Future[Int] = dbConfig.db.run(
     notifications += notification
   )
 
@@ -32,11 +34,9 @@ class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
       n <- notifications
       t <- notificationTypes if n.notification_type_id === t.id
       status <- notificationStatuses if n.notification_status_id === status.id
-    } yield (n.id, n.short_code, t.name, status.name, n.message, n.created_at, n.updated_at))
-      .result
-      .map(_.map {
-        case (id, short_code, typeName, status, message, created_at, updated_at) =>
-          NotificationDTO(id, short_code, typeName, status, message, created_at, updated_at)
+    } yield (n.id, n.short_code, t.name, status.name, n.message, n.created_at, n.updated_at)).result
+      .map(_.map { case (id, short_code, typeName, status, message, created_at, updated_at) =>
+        NotificationDTO(id, short_code, typeName, status, message, created_at, updated_at)
       })
   )
 
