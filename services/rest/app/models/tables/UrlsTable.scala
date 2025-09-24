@@ -13,6 +13,7 @@ class UrlsTable(tag: Tag) extends Table[Url](tag, "urls") {
   def clicks: Rep[Int] = column[Int]("clicks", O.Default(0))
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
+  def expires_at: Rep[Timestamp] = column[Timestamp]("expires_at")
 
   override def * : ProvenShape[Url] = (
     id,
@@ -20,7 +21,8 @@ class UrlsTable(tag: Tag) extends Table[Url](tag, "urls") {
     long_url,
     clicks,
     created_at,
-    updated_at
+    updated_at,
+    expires_at
   ) <> ((Url.apply _).tupled, Url.unapply)
 }
 

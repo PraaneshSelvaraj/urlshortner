@@ -18,10 +18,11 @@ import example.urlshortner.notification.grpc.{
 }
 import com.google.protobuf.empty.Empty
 import exceptions.TresholdReachedException
-
+import org.scalatest.time.{Seconds, Span, Milliseconds}
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, Duration}
 import scala.concurrent.{ExecutionContext, Future}
+import exceptions.UrlExpiredException
 
 class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
@@ -40,7 +41,13 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     long_url = "https://www.example.com",
     clicks = 0,
     created_at = Timestamp.from(Instant.now()),
-    updated_at = Timestamp.from(Instant.now())
+    updated_at = Timestamp.from(Instant.now()),
+    expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
+  )
+
+  implicit val defaultPatience: PatienceConfig = PatienceConfig(
+    timeout = Span(2, Seconds),
+    interval = Span(10, Milliseconds)
   )
 
   override def beforeEach(): Unit = {
@@ -104,6 +111,28 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
     }
 
+    "fail to redirect due to expiration" in {
+      val url = Url(
+        id = 1L,
+        short_code = "abcdefg",
+        long_url = "https://www.example.com",
+        clicks = 0,
+        created_at = Timestamp.from(Instant.now()),
+        updated_at = Timestamp.from(Instant.now()),
+        expires_at = Timestamp.from(Instant.now().minus(Duration.ofHours(1)))
+      )
+
+      when(mockUrlRepo.getUrlByShortcode(any[String]()))
+        .thenReturn(Future.successful(Some(url)))
+
+      val result = urlService.redirect(url.short_code)
+
+      whenReady(result.failed) { ex =>
+        ex mustBe a[UrlExpiredException]
+        ex.getMessage mustBe "Url Expired"
+      }
+    }
+
     "get Url by short code" in {
       when(mockUrlRepo.getUrlByShortcode(any[String]()))
         .thenReturn(Future.successful(Some(sampleUrl)))
@@ -130,7 +159,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         long_url = "https://www.example.com",
         clicks = 0,
         created_at = Timestamp.from(Instant.now()),
-        updated_at = Timestamp.from(Instant.now())
+        updated_at = Timestamp.from(Instant.now()),
+        expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
       )
 
       val url2 = Url(
@@ -139,7 +169,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         long_url = "https://www.youtube.com",
         clicks = 6,
         created_at = Timestamp.from(Instant.now()),
-        updated_at = Timestamp.from(Instant.now())
+        updated_at = Timestamp.from(Instant.now()),
+        expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
       )
 
       val url3 = Url(
@@ -148,7 +179,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         long_url = "https://www.test.com",
         clicks = 2,
         created_at = Timestamp.from(Instant.now()),
-        updated_at = Timestamp.from(Instant.now())
+        updated_at = Timestamp.from(Instant.now()),
+        expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
       )
 
       when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq(url1, url2, url3)))

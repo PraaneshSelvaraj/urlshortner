@@ -9,6 +9,7 @@ import play.api.mvc._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import services.UrlService
+import exceptions.UrlExpiredException
 
 class UrlController @Inject() (
     val controllerComponents: ControllerComponents,
@@ -55,6 +56,13 @@ class UrlController @Inject() (
             Json.obj(
               ("success", false),
               "message" -> s"Treshold reached for the url with short code $shortCode"
+            )
+          )
+        case _: UrlExpiredException =>
+          Forbidden(
+            Json.obj(
+              ("success", false),
+              "message" -> s"Url Expired for the url with short code $shortCode"
             )
           )
         case ex: Exception =>

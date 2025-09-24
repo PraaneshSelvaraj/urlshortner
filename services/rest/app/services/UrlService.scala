@@ -11,8 +11,8 @@ import example.urlshortner.notification.grpc.{
   NotificationType
 }
 import com.google.protobuf.empty.Empty
-import exceptions.TresholdReachedException
-
+import exceptions.{TresholdReachedException, UrlExpiredException}
+import java.time.{Instant, Duration}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -26,14 +26,20 @@ class UrlService @Inject() (
   def addUrl(urlData: UrlDto): Future[Url] = {
     for {
       code <- generateShortCode()
+      currentTime = new java.sql.Timestamp(System.currentTimeMillis())
+      urlExpirationHours = config.get[Int]("urlExpirationHours")
+      expiresAt = new java.sql.Timestamp(
+        currentTime.toInstant.plus(Duration.ofHours(urlExpirationHours)).toEpochMilli
+      )
       urlAdded <- {
         val newUrl = Url(
           id = 0L,
           short_code = code,
           long_url = urlData.url,
           clicks = 0,
-          created_at = new java.sql.Timestamp(System.currentTimeMillis()),
-          updated_at = new java.sql.Timestamp(System.currentTimeMillis())
+          created_at = currentTime,
+          updated_at = currentTime,
+          expires_at = expiresAt
         )
         urlRepo.addUrl(newUrl)
       }
@@ -60,6 +66,14 @@ class UrlService @Inject() (
         case Some(url) => Future.successful(url)
         case None =>
           Future.failed(new NoSuchElementException(s"Url with shortcode $shortCode does not exist"))
+      }
+      _ <- {
+        val currentTime = new java.sql.Timestamp(System.currentTimeMillis())
+        if (currentTime.after(url.expires_at)) {
+          Future.failed(new UrlExpiredException)
+        } else {
+          Future.successful(())
+        }
       }
       count <- urlRepo.incrementUrlCount(shortCode)
       _ <- {

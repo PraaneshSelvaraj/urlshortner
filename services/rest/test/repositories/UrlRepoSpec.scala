@@ -45,6 +45,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "https://example.com",
         0,
         Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
 
@@ -65,6 +66,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "xyz789",
         "https://test.com",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
@@ -88,6 +90,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "https://scala-lang.org",
         0,
         Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
       val url2 = Url(
@@ -95,6 +98,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "code2",
         "https://playframework.com",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
@@ -114,6 +118,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "a49g5a",
         "https://scala-lang.org",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
@@ -141,6 +146,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "https://example.org",
         0,
         Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
 
@@ -166,6 +172,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         "deleteTest",
         "https://scala-lang.org",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )

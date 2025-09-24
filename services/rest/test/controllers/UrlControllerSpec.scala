@@ -41,6 +41,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         "http://example.com",
         0,
         Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
 
@@ -86,6 +87,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         "abc123",
         "http://example.com",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
@@ -185,6 +187,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         "http://example.com",
         0,
         Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
 
@@ -210,6 +213,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         "abc123",
         "http://example.com",
         0,
+        Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
       )
