@@ -1,0 +1,2 @@
+-> /                  routers.UserRouter
+GET    /health        controllers.UserController.health

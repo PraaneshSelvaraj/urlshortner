@@ -1,31 +1,31 @@
 syntax = "proto3";
 
+package notification;
+
 import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
-option java_package = "example.urlshortner.notification.grpc";
 option java_outer_classname = "NotificationProto";
+option java_package = "example.urlshortner.notification.grpc";
 
-package notification;
-
-enum NotificationType{
+enum NotificationType {
   NEWURL = 0;
   TRESHOLD = 1;
 }
 
-enum NotificationStatus{
+enum NotificationStatus {
   SUCCESS = 0;
   PENDING = 1;
   FAILURE = 2;
 }
 
-message NotificationRequest{
+message NotificationRequest {
   NotificationType notificationType = 1;
   string message = 2;
   string shortCode = 3;
 }
 
-message NotificationReply{
+message NotificationReply {
   bool success = 1;
   string message = 2;
   NotificationStatus notificationStatus = 3;
@@ -39,10 +39,11 @@ message Notification {
   string message = 5;
 }
 
-message GetNotificationsResponse{
+message GetNotificationsResponse {
   repeated Notification notifications = 1;
 }
-service NotificationService{
+
+service NotificationService {
   rpc notify(NotificationRequest) returns (NotificationReply);
   rpc getNotifications(google.protobuf.Empty) returns (GetNotificationsResponse);
 }

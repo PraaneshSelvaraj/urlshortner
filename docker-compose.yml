@@ -32,10 +32,18 @@ services:
     image: rest-service:1.0.0
     container_name: rest-service
     ports:
-      - "9000:9000"
+      - "8080:9000"
     depends_on:
       - mysql
       - redis
+
+  user:
+    image: user-service:1.0.0
+    container_name: user-service
+    ports:
+      - "9002:9000"
+    depends_on:
+      - mysql
 
 volumes:
   mysql-data:

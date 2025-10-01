@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package user;
+
+option java_multiple_files = true;
+option java_outer_classname = "UserProto";
+option java_package = "example.urlshortner.user.grpc";
+
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+  string password = 4;
+  bool is_deleted = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+service UserService {
+  rpc createUser(CreateUserRequest) returns (User);
+}

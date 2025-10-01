@@ -42,9 +42,25 @@ CREATE TABLE notifications(
         FOREIGN KEY (notification_type_id) REFERENCES notification_types(id)
 );
 
+CREATE TABLE users(
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(25) UNIQUE NOT NULL,
+    email VARCHAR(128) UNIQUE NOT NULL,
+    password VARCHAR(1024) NOT NULL,
+    is_deleted BOOLEAN DEFAULT False,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX idx_username_users ON users(username);
+CREATE UNIQUE INDEX idx_email_users ON users(email);
+
 # --- !Downs
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS notification_statuses;
 DROP TABLE IF EXISTS notification_types;
 DROP INDEX idx_short_code_urls ON urls;
 DROP TABLE IF EXISTS urls;
+DROP INDEX idx_username_users ON users;
+DROP INDEX idx_email_users ON users;
+DROP TABLE IF EXISTS users;
