@@ -87,6 +87,7 @@ lazy val `rest-service` = (project in file("services/rest"))
       "mysql" % "mysql-connector-java" % "8.0.33",
       "io.lettuce" % "lettuce-core" % "6.8.1.RELEASE",
       "org.mindrot" % "jbcrypt" % "0.4",
+      "com.github.jwt-scala" %% "jwt-play-json" % "11.0.2",
       "org.apache.pekko" %% "pekko-discovery" % pekkoVersion,
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
       "com.h2database" % "h2" % "2.3.232" % Test,

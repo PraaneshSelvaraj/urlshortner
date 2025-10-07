@@ -27,6 +27,7 @@ class UserService @Inject() (
         username = reply.username,
         email = reply.email,
         password = reply.password,
+        role = "USER",
         is_deleted = reply.isDeleted,
         created_at = new Timestamp(reply.createdAt),
         updated_at = new Timestamp(reply.updatedAt)

@@ -10,34 +10,37 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import services.UrlService
 import exceptions.UrlExpiredException
+import auth.AuthenticatedAction
 
 class UrlController @Inject() (
     val controllerComponents: ControllerComponents,
     urlService: UrlService,
-    rateLimiter: RateLimiterAction
+    rateLimiter: RateLimiterAction,
+    authenticatedAction: AuthenticatedAction
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  def addUrl(): Action[AnyContent] = Action.async { implicit request: Request[AnyContent] =>
-    request.body.asJson match {
-      case Some(jsonData) =>
-        jsonData.validate[UrlDto].asOpt match {
-          case Some(urlData) =>
-            urlService
-              .addUrl(urlData)
-              .map { urlAdded =>
-                Created(Json.obj(("message", "Url Created successfully"), ("data", urlAdded)))
-              }
-              .recover { case ex: Exception =>
-                println(s"Error creating URL: ${ex.getMessage}")
-                InternalServerError(Json.obj(("message", "Failed to create URL")))
-              }
-          case None =>
-            Future.successful(BadRequest(Json.obj(("message", "Invalid Request Body Schema"))))
-        }
-      case None =>
-        Future.successful(BadRequest(Json.obj(("message", "Request Body needs to be JSON"))))
-    }
+  def addUrl(): Action[AnyContent] = authenticatedAction.async {
+    implicit request: Request[AnyContent] =>
+      request.body.asJson match {
+        case Some(jsonData) =>
+          jsonData.validate[UrlDto].asOpt match {
+            case Some(urlData) =>
+              urlService
+                .addUrl(urlData)
+                .map { urlAdded =>
+                  Created(Json.obj(("message", "Url Created successfully"), ("data", urlAdded)))
+                }
+                .recover { case ex: Exception =>
+                  println(s"Error creating URL: ${ex.getMessage}")
+                  InternalServerError(Json.obj(("message", "Failed to create URL")))
+                }
+            case None =>
+              Future.successful(BadRequest(Json.obj(("message", "Invalid Request Body Schema"))))
+          }
+        case None =>
+          Future.successful(BadRequest(Json.obj(("message", "Request Body needs to be JSON"))))
+      }
   }
 
   def redirectUrl(shortCode: String): Action[AnyContent] = rateLimiter.async { implicit request =>
@@ -73,11 +76,11 @@ class UrlController @Inject() (
       }
   }
 
-  def getUrls: Action[AnyContent] = Action.async { implicit req: Request[AnyContent] =>
+  def getUrls: Action[AnyContent] = authenticatedAction.async { implicit req: Request[AnyContent] =>
     urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
   }
 
-  def getUrlByShortCode(shortCode: String): Action[AnyContent] = Action.async {
+  def getUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
     implicit req: Request[AnyContent] =>
       urlService.getUrlByShortCode(shortCode) map {
         case Some(url) => Ok(Json.obj(("message", s"Url with shortcode $shortCode"), ("data", url)))
@@ -86,7 +89,7 @@ class UrlController @Inject() (
       }
   }
 
-  def deleteUrlByShortCode(shortCode: String): Action[AnyContent] = Action.async {
+  def deleteUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
     implicit req: Request[AnyContent] =>
       urlService
         .deleteUrlByShortCode(shortCode)
@@ -106,10 +109,11 @@ class UrlController @Inject() (
         }
   }
 
-  def getNotifications: Action[AnyContent] = Action.async { implicit req: Request[AnyContent] =>
-    urlService.getNotifications map { notifications =>
-      Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
-    }
+  def getNotifications: Action[AnyContent] = authenticatedAction.async {
+    implicit req: Request[AnyContent] =>
+      urlService.getNotifications map { notifications =>
+        Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
+      }
   }
 
 }

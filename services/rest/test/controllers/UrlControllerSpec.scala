@@ -16,10 +16,17 @@ import play.api.mvc.{BodyParsers, ControllerComponents}
 import play.api.test.Helpers._
 import play.api.test._
 import services.{RedisService, UrlService}
-
+import auth.AuthenticatedAction
+import auth.AuthenticatedRequest
+import play.api.mvc.AnyContent
+import play.api.mvc.{Request, Result}
+import scala.concurrent.Future
 import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
+import helpers.StubAuthenticatedAction
+import security.JwtUtility
+import repositories.UserRepo
 
 class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTimeout {
 
@@ -27,14 +34,26 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
   implicit val mat: Materializer = Materializer(system)
   implicit val ec: ExecutionContext = system.dispatcher
   val stubControllerComponents: ControllerComponents = Helpers.stubControllerComponents()
+  val mockJwtUtility = mock[JwtUtility]
+  val mockUserRepo = mock[UserRepo]
   val mockConfig: Configuration = mock[Configuration]
+  val stubAuthenticatedAction = new StubAuthenticatedAction(
+    new BodyParsers.Default(stubControllerComponents.parsers),
+    mockJwtUtility,
+    mockUserRepo
+  )
 
   "UrlController" should {
 
     "add url" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
       val urlAdded = Url(
         1L,
         "abc123",
@@ -61,7 +80,13 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "return BadRequest when request body not json" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller =
+        new UrlController(
+          stubControllerComponents,
+          mockService,
+          rateLimiterAction,
+          stubAuthenticatedAction
+        )
 
       val request = FakeRequest(POST, "/urls").withTextBody("not json")
 
@@ -80,7 +105,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         defaultBodyParser,
         stubControllerComponents
       )(ExecutionContext.global)
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       val url = Url(
         1L,
@@ -113,7 +143,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         defaultBodyParser,
         stubControllerComponents
       )(ExecutionContext.global)
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       when(mockService.redirect("unknown")) thenReturn Future.failed(
         new NoSuchElementException("Not found")
@@ -137,7 +172,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         defaultBodyParser,
         stubControllerComponents
       )(ExecutionContext.global)
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       when(mockService.redirect(any[String]()))
         .thenReturn(Future.failed(new TresholdReachedException))
@@ -164,7 +204,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         defaultBodyParser,
         stubControllerComponents
       )(ExecutionContext.global)
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       when(mockRedisService.isAllowed(any[String](), any[Int](), any[Int]()))
         .thenReturn(Future.successful(false))
@@ -179,7 +224,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "get all Urls" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       val url = Url(
         1L,
@@ -206,7 +256,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "get url by short code" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       val url = Url(
         1L,
@@ -229,7 +284,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "fail to get url when short code not found" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       when(mockService.getUrlByShortCode(any[String]())).thenReturn(Future.successful(None))
 
@@ -245,7 +305,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "delete a url" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(1))
 
@@ -258,7 +323,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "fail to delete url when exception raised" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
       val exec = new NoSuchElementException("Unable to find Url with shortcode abc123")
 
       when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.failed(exec))
@@ -275,7 +345,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "fail to delete url due to db issue" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
       when(mockService.deleteUrlByShortCode(any[String]())).thenReturn(Future.successful(0))
 
       val request = FakeRequest(DELETE, "/urls/abc123")
@@ -291,7 +366,12 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
     "get all notifications" in {
       val mockService = mock[UrlService]
       val rateLimiterAction = mock[RateLimiterAction]
-      val controller = new UrlController(stubControllerComponents, mockService, rateLimiterAction)
+      val controller = new UrlController(
+        stubControllerComponents,
+        mockService,
+        rateLimiterAction,
+        stubAuthenticatedAction
+      )
 
       val n1 = Notification(
         id = 1L,
