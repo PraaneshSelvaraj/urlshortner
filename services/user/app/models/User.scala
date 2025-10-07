@@ -8,6 +8,7 @@ case class User(
     username: String,
     email: String,
     password: String,
+    role: String,
     is_deleted: Boolean,
     created_at: Timestamp,
     updated_at: Timestamp

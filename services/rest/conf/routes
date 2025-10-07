@@ -5,4 +5,5 @@ GET     /urls/:shortCode                  controllers.UrlController.getUrlByShor
 DELETE  /urls/:shortCode                  controllers.UrlController.deleteUrlByShortCode(shortCode: String)
 GET     /notifications                    controllers.UrlController.getNotifications()
 POST    /user                             controllers.UserController.addUser()
+POST    /auth/login                       controllers.AuthController.login()
 GET    /:shortCode                        controllers.UrlController.redirectUrl(shortCode: String)

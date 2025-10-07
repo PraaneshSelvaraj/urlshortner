@@ -11,6 +11,7 @@ class UsersTable(tag: Tag) extends Table[User](tag, "users") {
   def username: Rep[String] = column[String]("username", O.Unique)
   def email: Rep[String] = column[String]("email", O.Unique)
   def password: Rep[String] = column[String]("password")
+  def role: Rep[String] = column[String]("role")
   def is_deleted: Rep[Boolean] = column[Boolean]("is_deleted")
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
@@ -20,6 +21,7 @@ class UsersTable(tag: Tag) extends Table[User](tag, "users") {
     username,
     email,
     password,
+    role,
     is_deleted,
     created_at,
     updated_at
