@@ -1,3 +1,5 @@
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+
 GET     /health                           controllers.HomeController.health()
 + nocsrf
 POST    /urls                             controllers.UrlController.addUrl()
@@ -8,5 +10,6 @@ DELETE  /urls/:shortCode                  controllers.UrlController.deleteUrlByS
 GET     /notifications                    controllers.UrlController.getNotifications()
 POST    /user                             controllers.UserController.addUser()
 POST    /auth/login                       controllers.AuthController.login()
++ nocsrf
 POST    /auth/google/login                controllers.AuthController.googleLogin()
 GET    /:shortCode                        controllers.UrlController.redirectUrl(shortCode: String)

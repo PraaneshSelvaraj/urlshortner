@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>URL Shortener - Login</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
+	<style>
+		body {
+			font-family: Arial;
+			max-width: 600px;
+			margin: 50px auto;
+			padding: 20px;
+		}
+
+		h1 {
+			color: #333;
+		}
+
+		hr {
+			margin: 20px 0;
+		}
+
+		#result {
+			margin-top: 20px;
+		}
+
+		pre {
+			background: #f4f4f4;
+			padding: 10px;
+			overflow-x: auto;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>🔗 URL Shortener</h1>
+	<p>Sign in to continue</p>
+
+	<hr>
+
+	<div id="g_id_onload" data-client_id="445865663487-prta533qvhbv8hf7htq6hpbcm8lrkovn.apps.googleusercontent.com"
+		data-callback="handleGoogleLogin" data-use_fedcm_for_prompt="false">
+	</div>
+	<!-- <div id="g_id_onload" data-client_id="445865663487-prta533qvhbv8hf7htq6hpbcm8lrkovn.apps.googleusercontent.com" -->
+	<!-- 	data-callback="handleGoogleLogin"> -->
+	<!-- </div> -->
+	<div class="g_id_signin"></div>
+
+	<hr>
+
+	<div id="result"></div>
+
+	<script>
+		async function handleGoogleLogin(response) {
+			const result = document.getElementById('result');
+			result.innerHTML = '⏳ Authenticating...';
+
+			try {
+				const res = await fetch('http://localhost:8080/auth/google/login', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({idToken: response.credential})
+				});
+
+				const data = await res.json();
+
+				if (res.ok) {
+					localStorage.setItem('jwt_token', data.token);
+					result.innerHTML = `
+            <h2>✅ Success!</h2>
+            <p><strong>User:</strong> ${data.user.username}</p>
+            <p><strong>Email:</strong> ${data.user.email}</p>
+            <p><strong>Token saved to localStorage</strong></p>
+            <details>
+              <summary>Full Response</summary>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </details>
+          `;
+				} else {
+					result.innerHTML = `
+            <h2>❌ Error</h2>
+            <p>${data.message}</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+				}
+			} catch (error) {
+				result.innerHTML = `<h2>❌ Network Error</h2><p>${error.message}</p>`;
+			}
+		}
+	</script>
+</body>
+
+</html>
