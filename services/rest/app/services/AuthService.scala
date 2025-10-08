@@ -1,7 +1,13 @@
 package services
 
 import dtos.LoginDTO
-import example.urlshortner.user.grpc.{UserServiceClient, LoginRequest, LoginResponse}
+import example.urlshortner.user.grpc.{
+  UserServiceClient,
+  LoginRequest,
+  GoogleLoginRequest,
+  LoginResponse
+}
+import play.api.libs.json.{Json, JsObject}
 
 import com.google.protobuf.empty.Empty
 import exceptions.{TresholdReachedException, UrlExpiredException}
@@ -25,5 +31,37 @@ class AuthService @Inject() (
           Future.failed(new Exception(reply.message))
         }
     } yield token
+  }
+
+  def googleLogin(idToken: String): Future[JsObject] = {
+    val googleLoginRequest = GoogleLoginRequest(idToken = idToken)
+
+    userServiceClient.googleLogin(googleLoginRequest).map { response =>
+      response.user match {
+        case Some(user) =>
+          Json.obj(
+            "success" -> true,
+            "message" -> response.message,
+            "token" -> response.token,
+            "user" -> Json.obj(
+              "id" -> user.id,
+              "username" -> user.username,
+              "email" -> user.email,
+              "role" -> user.role,
+              "authProvider" -> (if (user.authProvider.isGoogle) "GOOGLE" else "LOCAL")
+            )
+          )
+        case None =>
+          Json.obj(
+            "success" -> true,
+            "message" -> response.message,
+            "token" -> response.token
+          )
+      }
+    }
+  }
+
+  def isNewUserCreation(message: String): Boolean = {
+    message.toLowerCase.contains("created")
   }
 }

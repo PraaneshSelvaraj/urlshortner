@@ -58,6 +58,8 @@ lazy val `user-service` = (project in file("services/user"))
       "mysql" % "mysql-connector-java" % "8.0.33",
       "org.mindrot" % "jbcrypt" % "0.4",
       "com.github.jwt-scala" %% "jwt-play-json" % "11.0.2",
+      "com.google.api-client" % "google-api-client" % "2.2.0",
+      "com.google.http-client" % "google-http-client-jackson2" % "1.43.3",
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
       "com.h2database" % "h2" % "2.3.232" % Test,
       "org.mockito" %% "mockito-scala" % "2.0.0" % Test
@@ -89,6 +91,8 @@ lazy val `rest-service` = (project in file("services/rest"))
       "org.mindrot" % "jbcrypt" % "0.4",
       "com.github.jwt-scala" %% "jwt-play-json" % "11.0.2",
       "org.apache.pekko" %% "pekko-discovery" % pekkoVersion,
+      "com.google.api-client" % "google-api-client" % "2.2.0",
+      "com.google.http-client" % "google-http-client-jackson2" % "1.43.3",
       "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
       "com.h2database" % "h2" % "2.3.232" % Test,
       "org.mockito" %% "mockito-scala" % "2.0.0" % Test

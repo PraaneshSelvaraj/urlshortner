@@ -21,6 +21,11 @@ message LoginResponse {
   bool success = 1;
   string token = 2;
   string message = 3;
+  optional User user = 4;
+}
+
+message GoogleLoginRequest {
+  string id_token = 1;
 }
 
 enum AuthProvider {
@@ -44,4 +49,5 @@ message User {
 service UserService {
   rpc createUser(CreateUserRequest) returns (User);
   rpc userLogin(LoginRequest) returns (LoginResponse);
+  rpc googleLogin(GoogleLoginRequest) returns (LoginResponse);
 }

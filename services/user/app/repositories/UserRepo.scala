@@ -19,8 +19,13 @@ class UserRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     dbConfig.db.run(users.result)
 
   def addUser(user: User): Future[Long] = {
+    val userToAdd = user.password match {
+      case Some(password) if !password.startsWith("$2") =>
+        user.copy(password = Some(BCrypt.hashpw(password, BCrypt.gensalt())))
+      case _ => user
+    }
     dbConfig.db.run(
-      (users returning users.map(_.id)) += user
+      (users returning users.map(_.id)) += userToAdd
     )
   }
 

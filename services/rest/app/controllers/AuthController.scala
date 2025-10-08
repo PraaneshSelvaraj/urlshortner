@@ -1,6 +1,6 @@
 package controllers
 
-import dtos.LoginDTO
+import dtos.{LoginDTO, GoogleLoginDTO}
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc._
 import services.AuthService
@@ -50,6 +50,77 @@ class AuthController @Inject() (
             }
         }
       case None => Future.successful(BadRequest(Json.obj("message" -> "Expecting JSON Body")))
+    }
+  }
+
+  def googleLogin: Action[AnyContent] = Action.async { implicit req: Request[AnyContent] =>
+    req.body.asJson match {
+      case Some(jsonData) =>
+        jsonData.validate[GoogleLoginDTO].asEither match {
+          case Left(errors) =>
+            Future.successful(
+              BadRequest(
+                Json.obj(
+                  ("message", "Invalid JSON for Google Login Schema"),
+                  ("errors", JsError.toJson(errors))
+                )
+              )
+            )
+          case Right(googleLoginData) =>
+            (authService.googleLogin(googleLoginData.idToken) map { responseJson =>
+              val message = (responseJson \ "message").as[String]
+              val statusCode = if (authService.isNewUserCreation(message)) Created else Ok
+
+              statusCode(responseJson)
+            }).recover {
+              case ex: StatusRuntimeException
+                  if ex.getStatus.getCode == grpcStatus.Code.UNAUTHENTICATED =>
+                Unauthorized(
+                  Json.obj(
+                    ("success", false),
+                    ("message", "Invalid or expired Google ID token")
+                  )
+                )
+
+              case ex: StatusRuntimeException
+                  if ex.getStatus.getCode == grpcStatus.Code.ALREADY_EXISTS =>
+                Conflict(
+                  Json.obj(
+                    ("success", false),
+                    ("message", ex.getStatus.getDescription)
+                  )
+                )
+
+              case ex: StatusRuntimeException
+                  if ex.getStatus.getCode == grpcStatus.Code.PERMISSION_DENIED =>
+                Forbidden(
+                  Json.obj(
+                    ("success", false),
+                    ("message", ex.getStatus.getDescription)
+                  )
+                )
+
+              case ex: StatusRuntimeException =>
+                InternalServerError(
+                  Json.obj(
+                    ("success", false),
+                    ("message", s"gRPC error: ${ex.getStatus.getCode} - ${ex.getMessage}")
+                  )
+                )
+
+              case ex: Exception =>
+                InternalServerError(
+                  Json.obj(
+                    ("success", false),
+                    ("message", s"Authentication failed: ${ex.getMessage}")
+                  )
+                )
+            }
+        }
+      case None =>
+        Future.successful(
+          BadRequest(Json.obj(("message", "Expecting JSON Body with idToken field")))
+        )
     }
   }
 }

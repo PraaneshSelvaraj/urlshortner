@@ -6,6 +6,7 @@ import org.apache.pekko.stream.Materializer
 import example.urlshortner.user.grpc._
 import io.grpc.Status
 import repositories.UserRepo
+import services.GoogleAuthService
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import java.sql.Timestamp
@@ -17,7 +18,8 @@ class UserRouter @Inject() (
     mat: Materializer,
     system: ActorSystem,
     val userRepo: UserRepo,
-    val jwtUtility: JwtUtility
+    val jwtUtility: JwtUtility,
+    val googleAuthService: GoogleAuthService
 ) extends AbstractUserServiceRouter(system) {
   implicit val ec: ExecutionContextExecutor = system.dispatcher
 
@@ -86,9 +88,7 @@ class UserRouter @Inject() (
     }
   }
 
-  def userLogin(
-      in: LoginRequest
-  ): Future[LoginResponse] = {
+  override def userLogin(in: LoginRequest): Future[LoginResponse] = {
     if (in.email.isEmpty) {
       Future.failed(
         new GrpcServiceException(
@@ -102,26 +102,167 @@ class UserRouter @Inject() (
         )
       )
     } else {
-      for {
-        userOpt <- userRepo.authenticate(in.email, in.password)
-        user <- userOpt match {
-          case Some(user) => Future.successful(user)
-          case None =>
+      userRepo.authenticate(in.email, in.password).flatMap {
+        case Some(user) =>
+          // Check if user is deleted
+          if (user.is_deleted) {
             Future.failed(
               new GrpcServiceException(
-                status = Status.PERMISSION_DENIED.withDescription("Invalid Credentials")
+                status = Status.PERMISSION_DENIED
+                  .withDescription("Account has been deactivated")
               )
             )
-        }
-      } yield {
-        val jwtToken = jwtUtility.createToken(user.email, user.role)
-        LoginResponse(
-          success = true,
-          token = jwtToken,
-          message = "Login was Successfull"
-        )
+          }
+          // Check if user is using LOCAL authentication
+          else if (user.auth_provider != "LOCAL") {
+            Future.failed(
+              new GrpcServiceException(
+                status = Status.PERMISSION_DENIED
+                  .withDescription(
+                    s"This account uses ${user.auth_provider} authentication. Please use the appropriate login method."
+                  )
+              )
+            )
+          }
+          // Valid user - return JWT token
+          else {
+            val jwtToken = jwtUtility.createToken(user.email, user.role)
+            Future.successful(
+              LoginResponse(
+                success = true,
+                token = jwtToken,
+                message = "Login was Successfull",
+                user = Some(mapToProtoUser(user))
+              )
+            )
+          }
+
+        case None =>
+          Future.failed(
+            new GrpcServiceException(
+              status = Status.PERMISSION_DENIED.withDescription("Invalid Credentials")
+            )
+          )
       }
     }
   }
 
+  override def googleLogin(in: GoogleLoginRequest): Future[LoginResponse] = {
+    if (in.idToken.isEmpty) {
+      Future.failed(
+        new GrpcServiceException(
+          status = Status.INVALID_ARGUMENT.withDescription("ID token is required")
+        )
+      )
+    } else {
+      googleAuthService
+        .verifyToken(in.idToken)
+        .flatMap {
+          case Some(googleUserInfo) =>
+            userRepo.findUserByEmail(googleUserInfo.email).flatMap {
+              case Some(existingUser) =>
+                // Check if deleted first
+                if (existingUser.is_deleted) {
+                  Future.failed(
+                    new GrpcServiceException(
+                      status = Status.PERMISSION_DENIED
+                        .withDescription("Account has been deactivated")
+                    )
+                  )
+                }
+                // Check if different provider
+                else if (existingUser.auth_provider != "GOOGLE") {
+                  Future.failed(
+                    new GrpcServiceException(
+                      status = Status.ALREADY_EXISTS
+                        .withDescription(
+                          s"Account exists with ${existingUser.auth_provider} authentication. Please use the appropriate login method."
+                        )
+                    )
+                  )
+                }
+                // Existing active Google user
+                else {
+                  val jwtToken = jwtUtility.createToken(existingUser.email, existingUser.role)
+                  Future.successful(
+                    LoginResponse(
+                      success = true,
+                      token = jwtToken,
+                      message = "Login successful",
+                      user = Some(mapToProtoUser(existingUser))
+                    )
+                  )
+                }
+
+              case None =>
+                // New user - create account
+                val newUser = models.User(
+                  id = 0L,
+                  username = googleUserInfo.name,
+                  email = googleUserInfo.email,
+                  password = None,
+                  role = "USER",
+                  google_id = Some(googleUserInfo.googleId),
+                  auth_provider = "GOOGLE",
+                  is_deleted = false,
+                  created_at = Timestamp.from(Instant.now()),
+                  updated_at = Timestamp.from(Instant.now())
+                )
+
+                userRepo
+                  .addUser(newUser)
+                  .map { userId =>
+                    val jwtToken = jwtUtility.createToken(newUser.email, newUser.role)
+                    LoginResponse(
+                      success = true,
+                      token = jwtToken,
+                      message = "Account created and login successful",
+                      user = Some(mapToProtoUser(newUser.copy(id = userId)))
+                    )
+                  }
+                  .recover {
+                    case e: java.sql.SQLException if e.getErrorCode == 1062 =>
+                      throw new GrpcServiceException(
+                        status = Status.ALREADY_EXISTS.withDescription("User already exists")
+                      )
+                    case e: Exception =>
+                      throw new GrpcServiceException(
+                        status =
+                          Status.INTERNAL.withDescription(s"Failed to create user: ${e.getMessage}")
+                      )
+                  }
+            }
+
+          case None =>
+            Future.failed(
+              new GrpcServiceException(
+                status = Status.UNAUTHENTICATED.withDescription("Invalid Google ID token")
+              )
+            )
+        }
+        .recover {
+          case e: GrpcServiceException => throw e
+          case e: Exception =>
+            throw new GrpcServiceException(
+              status = Status.INTERNAL.withDescription(s"Authentication failed: ${e.getMessage}")
+            )
+        }
+    }
+  }
+
+  private def mapToProtoUser(user: models.User): User = {
+    User(
+      id = user.id,
+      username = user.username,
+      email = user.email,
+      password = None, // Never send password back
+      role = user.role,
+      googleId = user.google_id,
+      authProvider =
+        if (user.auth_provider == "GOOGLE") AuthProvider.GOOGLE else AuthProvider.LOCAL,
+      isDeleted = user.is_deleted,
+      createdAt = user.created_at.getTime,
+      updatedAt = user.updated_at.getTime
+    )
+  }
 }
