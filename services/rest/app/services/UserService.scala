@@ -28,6 +28,8 @@ class UserService @Inject() (
         email = reply.email,
         password = reply.password,
         role = "USER",
+        google_id = reply.googleId,
+        auth_provider = reply.authProvider.toString(),
         is_deleted = reply.isDeleted,
         created_at = new Timestamp(reply.createdAt),
         updated_at = new Timestamp(reply.updatedAt)

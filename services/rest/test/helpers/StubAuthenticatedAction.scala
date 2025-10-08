@@ -35,8 +35,10 @@ class StubAuthenticatedAction(
         id = 1L,
         username = "testuser",
         email = "test@example.com",
-        password = "hashedPassword123",
+        password = Some("hashedPassword123"),
         role = userRole,
+        google_id = None,
+        auth_provider = "LOCAL",
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())

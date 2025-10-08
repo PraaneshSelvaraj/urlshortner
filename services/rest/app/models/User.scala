@@ -7,8 +7,10 @@ case class User(
     id: Long,
     username: String,
     email: String,
-    password: String,
+    password: Option[String],
     role: String,
+    google_id: Option[String],
+    auth_provider: String,
     is_deleted: Boolean,
     created_at: Timestamp,
     updated_at: Timestamp

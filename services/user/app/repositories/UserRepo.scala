@@ -31,8 +31,13 @@ class UserRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
   def authenticate(email: String, password: String): Future[Option[User]] = {
     findUserByEmail(email) map {
       case Some(user) =>
-        if (BCrypt.checkpw(password, user.password)) Some(user)
-        else None
+        user.password match {
+          case Some(hashedPassword) =>
+            if (BCrypt.checkpw(password, hashedPassword)) Some(user)
+            else None
+          case None =>
+            None
+        }
       case None => None
     }
   }

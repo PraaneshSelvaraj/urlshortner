@@ -45,8 +45,10 @@ class UserRouter @Inject() (
         id = 0L,
         username = in.username,
         email = in.email,
-        password = in.password,
+        password = Some(in.password),
         role = "USER",
+        google_id = None,
+        auth_provider = "LOCAL",
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -61,6 +63,8 @@ class UserRouter @Inject() (
           email = newUser.email,
           password = newUser.password,
           role = newUser.role,
+          googleId = None,
+          authProvider = AuthProvider.LOCAL,
           isDeleted = newUser.is_deleted,
           createdAt = newUser.created_at.getTime(),
           updatedAt = newUser.updated_at.getTime()
