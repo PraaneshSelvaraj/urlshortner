@@ -37,6 +37,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
   val sampleUrlDto = UrlDto("https://www.example.com")
   val sampleUrl = Url(
     id = 1L,
+    user_id = 1L,
     short_code = "abcdefg",
     long_url = "https://www.example.com",
     clicks = 0,
@@ -64,7 +65,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         Future.successful(NotificationReply(success = true, message = "Notification sent"))
       )
 
-      val result = urlService.addUrl(sampleUrlDto)
+      val result = urlService.addUrl(sampleUrlDto, 1)
 
       whenReady(result) { addedUrl =>
         addedUrl.long_url mustBe sampleUrlDto.url
@@ -114,6 +115,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     "fail to redirect due to expiration" in {
       val url = Url(
         id = 1L,
+        user_id = 1L,
         short_code = "abcdefg",
         long_url = "https://www.example.com",
         clicks = 0,
@@ -155,6 +157,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     "get all Urls" in {
       val url1 = Url(
         id = 1L,
+        user_id = 1L,
         short_code = "abcdefg",
         long_url = "https://www.example.com",
         clicks = 0,
@@ -165,6 +168,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
       val url2 = Url(
         id = 2L,
+        user_id = 1L,
         short_code = "test",
         long_url = "https://www.youtube.com",
         clicks = 6,
@@ -175,6 +179,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
       val url3 = Url(
         id = 3L,
+        user_id = 1L,
         short_code = "sample",
         long_url = "https://www.test.com",
         clicks = 2,

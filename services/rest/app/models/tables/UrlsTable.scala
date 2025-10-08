@@ -8,6 +8,7 @@ import java.sql.Timestamp
 
 class UrlsTable(tag: Tag) extends Table[Url](tag, "urls") {
   def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def user_id: Rep[Long] = column[Long]("user_id", O.Unique)
   def short_code: Rep[String] = column[String]("short_code", O.Unique)
   def long_url: Rep[String] = column[String]("long_url")
   def clicks: Rep[Int] = column[Int]("clicks", O.Default(0))
@@ -17,6 +18,7 @@ class UrlsTable(tag: Tag) extends Table[Url](tag, "urls") {
 
   override def * : ProvenShape[Url] = (
     id,
+    user_id,
     short_code,
     long_url,
     clicks,

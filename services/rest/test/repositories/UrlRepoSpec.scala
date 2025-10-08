@@ -1,6 +1,6 @@
 package repositories
 
-import models.Url
+import models.{Url, User}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -12,8 +12,14 @@ import scala.concurrent.ExecutionContext
 import java.sql.Timestamp
 import java.time.Instant
 import org.scalatest.time.{Millis, Seconds, Span}
+import org.scalatest.BeforeAndAfterAll
 
-class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with GuiceOneAppPerSuite {
+class UrlRepoSpec
+    extends AnyWordSpec
+    with Matchers
+    with ScalaFutures
+    with GuiceOneAppPerSuite
+    with BeforeAndAfterAll {
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder()
@@ -29,18 +35,41 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       .build()
 
   private val dbConfigProvider = app.injector.instanceOf[DatabaseConfigProvider]
-  private implicit val ec: ExecutionContext =
-    app.injector.instanceOf[ExecutionContext]
-  private val repo = new UrlRepo(dbConfigProvider)
+  private implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
+  private val urlRepo = new UrlRepo(dbConfigProvider)
+  private val userRepo = new UserRepo(dbConfigProvider)
 
   implicit override val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(50, Millis))
+
+  var testUserId: Long = _
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    val testUser = User(
+      id = 0L,
+      username = "testuser",
+      email = "test@example.com",
+      password = Some("password123"),
+      role = "USER",
+      google_id = None,
+      auth_provider = "LOCAL",
+      is_deleted = false,
+      created_at = Timestamp.from(Instant.now()),
+      updated_at = Timestamp.from(Instant.now())
+    )
+
+    testUserId = whenReady(userRepo.addUser(testUser)) { userID =>
+      userID
+    }
+  }
 
   "UrlRepo" should {
 
     "add and get a URL" in {
       val url = Url(
         0L,
+        testUserId,
         "abc123",
         "https://example.com",
         0,
@@ -50,8 +79,8 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       )
 
       val result = for {
-        inserted <- repo.addUrl(url)
-        found <- repo.getUrlById(inserted.id)
+        inserted <- urlRepo.addUrl(url)
+        found <- urlRepo.getUrlById(inserted.id)
       } yield found
 
       whenReady(result) { found =>
@@ -63,6 +92,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     "increment clicks" in {
       val url = Url(
         0L,
+        testUserId,
         "xyz789",
         "https://test.com",
         0,
@@ -72,9 +102,9 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       )
 
       val result = for {
-        _ <- repo.addUrl(url)
-        count <- repo.incrementUrlCount("xyz789")
-        found <- repo.getUrlByShortcode("xyz789")
+        _ <- urlRepo.addUrl(url)
+        count <- urlRepo.incrementUrlCount("xyz789")
+        found <- urlRepo.getUrlByShortcode("xyz789")
       } yield (count, found)
 
       whenReady(result) { case (count, found) =>
@@ -86,6 +116,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     "get all Urls" in {
       val url1 = Url(
         0L,
+        testUserId,
         "code1",
         "https://scala-lang.org",
         0,
@@ -95,6 +126,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       )
       val url2 = Url(
         0L,
+        testUserId,
         "code2",
         "https://playframework.com",
         0,
@@ -103,9 +135,9 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         Timestamp.from(Instant.now())
       )
 
-      whenReady(repo.addUrl(url1)) { _ =>
-        whenReady(repo.addUrl(url2)) { _ =>
-          whenReady(repo.getAllUrls) { urls =>
+      whenReady(urlRepo.addUrl(url1)) { _ =>
+        whenReady(urlRepo.addUrl(url2)) { _ =>
+          whenReady(urlRepo.getAllUrls) { urls =>
             urls.map(_.short_code) should contain allOf ("code1", "code2")
           }
         }
@@ -115,6 +147,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     "return Url by Id" in {
       val url = Url(
         0L,
+        testUserId,
         "a49g5a",
         "https://scala-lang.org",
         0,
@@ -124,8 +157,8 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       )
 
       val result = for {
-        urlAdded <- repo.addUrl(url)
-        urlOpt <- repo.getUrlById(urlAdded.id)
+        urlAdded <- urlRepo.addUrl(url)
+        urlOpt <- urlRepo.getUrlById(urlAdded.id)
       } yield (urlAdded, urlOpt)
 
       whenReady(result) { case (urlAdded, urlOpt) =>
@@ -134,7 +167,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     }
 
     "return none when searching non having id" in {
-      whenReady(repo.getUrlById(9999)) { result =>
+      whenReady(urlRepo.getUrlById(9999)) { result =>
         result shouldBe None
       }
     }
@@ -142,6 +175,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     "return Url by ShortCode" in {
       val url = Url(
         0L,
+        testUserId,
         "eg123",
         "https://example.org",
         0,
@@ -151,8 +185,8 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
       )
 
       val result = for {
-        urlAdded <- repo.addUrl(url)
-        urlOpt <- repo.getUrlByShortcode(urlAdded.short_code)
+        urlAdded <- urlRepo.addUrl(url)
+        urlOpt <- urlRepo.getUrlByShortcode(urlAdded.short_code)
       } yield (urlAdded, urlOpt)
 
       whenReady(result) { case (urlAdded, urlOpt) =>
@@ -161,7 +195,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     }
 
     "return None when searching for non having code" in {
-      whenReady(repo.getUrlByShortcode("testCODE")) { result =>
+      whenReady(urlRepo.getUrlByShortcode("testCODE")) { result =>
         result shouldBe None
       }
     }
@@ -169,6 +203,7 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
     "delete url" in {
       val url1 = Url(
         0L,
+        testUserId,
         "deleteTest",
         "https://scala-lang.org",
         0,
@@ -177,9 +212,9 @@ class UrlRepoSpec extends AnyWordSpec with Matchers with ScalaFutures with Guice
         Timestamp.from(Instant.now())
       )
       val result = for {
-        _ <- repo.addUrl(url1)
-        rowsAffected <- repo.deleteUrlByShortCode(url1.short_code)
-        url <- repo.getUrlByShortcode(url1.short_code)
+        _ <- urlRepo.addUrl(url1)
+        rowsAffected <- urlRepo.deleteUrlByShortCode(url1.short_code)
+        url <- urlRepo.getUrlByShortcode(url1.short_code)
       } yield (rowsAffected, url)
 
       whenReady(result) { case (rowsAffected, urlOpt) =>

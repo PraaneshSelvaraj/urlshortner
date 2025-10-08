@@ -23,7 +23,7 @@ class UrlService @Inject() (
     config: Configuration
 )(implicit ec: ExecutionContext) {
 
-  def addUrl(urlData: UrlDto): Future[Url] = {
+  def addUrl(urlData: UrlDto, userId: Long): Future[Url] = {
     for {
       code <- generateShortCode()
       currentTime = new java.sql.Timestamp(System.currentTimeMillis())
@@ -34,6 +34,7 @@ class UrlService @Inject() (
       urlAdded <- {
         val newUrl = Url(
           id = 0L,
+          user_id = userId,
           short_code = code,
           long_url = urlData.url,
           clicks = 0,

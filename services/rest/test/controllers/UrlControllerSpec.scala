@@ -56,6 +56,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       )
       val urlAdded = Url(
         1L,
+        1L,
         "abc123",
         "http://example.com",
         0,
@@ -64,7 +65,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
         Timestamp.from(Instant.now())
       )
 
-      when(mockService.addUrl(any[UrlDto])) thenReturn Future.successful(urlAdded)
+      when(mockService.addUrl(any[UrlDto], any[Long])) thenReturn Future.successful(urlAdded)
 
       val request = FakeRequest(POST, "/urls").withJsonBody(Json.obj("url" -> "http://example.com"))
 
@@ -113,6 +114,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       )
 
       val url = Url(
+        1L,
         1L,
         "abc123",
         "http://example.com",
@@ -233,6 +235,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
 
       val url = Url(
         1L,
+        1L,
         "abc123",
         "http://example.com",
         0,
@@ -264,6 +267,7 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
       )
 
       val url = Url(
+        1L,
         1L,
         "abc123",
         "http://example.com",

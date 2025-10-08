@@ -5,6 +5,7 @@ import java.sql.Timestamp
 
 case class Url(
     id: Long,
+    user_id: Long,
     short_code: String,
     long_url: String,
     clicks: Int,

@@ -10,7 +10,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import services.UrlService
 import exceptions.UrlExpiredException
-import auth.AuthenticatedAction
+import auth.{AuthenticatedAction, AuthenticatedRequest}
 
 class UrlController @Inject() (
     val controllerComponents: ControllerComponents,
@@ -21,13 +21,15 @@ class UrlController @Inject() (
     extends BaseController {
 
   def addUrl(): Action[AnyContent] = authenticatedAction.async {
-    implicit request: Request[AnyContent] =>
+    implicit request: AuthenticatedRequest[AnyContent] =>
+      val userId = request.user.id
+
       request.body.asJson match {
         case Some(jsonData) =>
           jsonData.validate[UrlDto].asOpt match {
             case Some(urlData) =>
               urlService
-                .addUrl(urlData)
+                .addUrl(urlData, userId)
                 .map { urlAdded =>
                   Created(Json.obj(("message", "Url Created successfully"), ("data", urlAdded)))
                 }
@@ -76,8 +78,9 @@ class UrlController @Inject() (
       }
   }
 
-  def getUrls: Action[AnyContent] = authenticatedAction.async { implicit req: Request[AnyContent] =>
-    urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
+  def getUrls: Action[AnyContent] = authenticatedAction.async {
+    implicit req: AuthenticatedRequest[AnyContent] =>
+      urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
   }
 
   def getUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
@@ -90,7 +93,7 @@ class UrlController @Inject() (
   }
 
   def deleteUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
-    implicit req: Request[AnyContent] =>
+    implicit req: AuthenticatedRequest[AnyContent] =>
       urlService
         .deleteUrlByShortCode(shortCode)
         .map(rowsAffected =>
@@ -110,7 +113,7 @@ class UrlController @Inject() (
   }
 
   def getNotifications: Action[AnyContent] = authenticatedAction.async {
-    implicit req: Request[AnyContent] =>
+    implicit req: AuthenticatedRequest[AnyContent] =>
       urlService.getNotifications map { notifications =>
         Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
       }
