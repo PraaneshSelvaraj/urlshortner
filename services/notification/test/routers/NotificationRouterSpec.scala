@@ -34,7 +34,7 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val router = new NotificationRouter(mat, system, mockRepo)
 
       val request = NotificationRequest(
-        shortCode = "abc123",
+        shortCode = Some("abc123"),
         notificationType = NotificationType.NEWURL,
         message = "Created new url"
       )
@@ -61,27 +61,9 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       val router = new NotificationRouter(mat, system, mockRepo)
 
       val request = NotificationRequest(
-        shortCode = "abc123",
+        shortCode = Some("abc123"),
         notificationType = NotificationType.NEWURL,
         message = ""
-      )
-
-      val failed = router.notifyMethod(request)
-
-      whenReady(failed.failed) { ex =>
-        ex shouldBe a[io.grpc.StatusRuntimeException]
-        ex.getMessage should include("INVALID_ARGUMENT")
-      }
-    }
-
-    "fail if shortCode is empty" in {
-      val mockRepo = mock[NotificationRepo]
-      val router = new NotificationRouter(mat, system, mockRepo)
-
-      val request = NotificationRequest(
-        shortCode = "",
-        notificationType = NotificationType.NEWURL,
-        message = "Created new url"
       )
 
       val failed = router.notifyMethod(request)
@@ -98,7 +80,8 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
 
       val notification1 = NotificationDTO(
         1L,
-        "abc123",
+        Some("abc123"),
+        None,
         "NEWURL",
         "SUCCESS",
         "Created new url",
@@ -107,7 +90,8 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
       )
       val notification2 = NotificationDTO(
         2L,
-        "def456",
+        Some("def456"),
+        None,
         "TRESHOLD",
         "FAILURE",
         "Threshold reached",

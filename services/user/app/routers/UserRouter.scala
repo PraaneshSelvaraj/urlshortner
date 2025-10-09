@@ -130,6 +130,7 @@ class UserRouter @Inject() (
             Future.successful(
               LoginResponse(
                 success = true,
+                isUserCreated = false,
                 token = jwtToken,
                 message = "Login was Successfull",
                 user = Some(mapToProtoUser(user))
@@ -187,6 +188,7 @@ class UserRouter @Inject() (
                   Future.successful(
                     LoginResponse(
                       success = true,
+                      isUserCreated = false,
                       token = jwtToken,
                       message = "Login successful",
                       user = Some(mapToProtoUser(existingUser))
@@ -215,6 +217,7 @@ class UserRouter @Inject() (
                     val jwtToken = jwtUtility.createToken(newUser.email, newUser.role)
                     LoginResponse(
                       success = true,
+                      isUserCreated = true,
                       token = jwtToken,
                       message = "Account created and login successful",
                       user = Some(mapToProtoUser(newUser.copy(id = userId)))
@@ -255,7 +258,7 @@ class UserRouter @Inject() (
       id = user.id,
       username = user.username,
       email = user.email,
-      password = None, // Never send password back
+      password = None,
       role = user.role,
       googleId = user.google_id,
       authProvider =

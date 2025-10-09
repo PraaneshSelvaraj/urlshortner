@@ -112,7 +112,8 @@ class NotificationRepoSpec
     "add a Notification" in {
       val notification = Notification(
         0L,
-        "abc123",
+        Some("abc123"),
+        None,
         newUrlTypeId,
         successStatusId,
         "Created new url",
@@ -127,7 +128,8 @@ class NotificationRepoSpec
     "get all notifications" in {
       val n1 = Notification(
         0L,
-        "abc123",
+        Some("abc123"),
+        None,
         newUrlTypeId,
         successStatusId,
         "Created new url",
@@ -136,7 +138,8 @@ class NotificationRepoSpec
       )
       val n2 = Notification(
         0L,
-        "def456",
+        Some("def456"),
+        None,
         newUrlTypeId,
         pendingStatusId,
         "Created new url",
@@ -145,7 +148,8 @@ class NotificationRepoSpec
       )
       val n3 = Notification(
         0L,
-        "def456",
+        Some("def456"),
+        None,
         thresholdTypeId,
         failureStatusId,
         "TRESHOLD REACHED",

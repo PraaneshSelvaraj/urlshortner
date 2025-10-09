@@ -2,6 +2,7 @@ package services
 import dtos.CreateUserDTO
 import play.api.Configuration
 import example.urlshortner.user.grpc._
+import example.urlshortner.notification.grpc._
 import models.{User => UserModel}
 import java.sql.Timestamp
 import javax.inject.Inject
@@ -10,6 +11,7 @@ import scala.util.Random
 
 class UserService @Inject() (
     userServiceClient: UserServiceClient,
+    notificationServiceClient: NotificationServiceClient,
     config: Configuration
 )(implicit ec: ExecutionContext) {
 
@@ -21,20 +23,34 @@ class UserService @Inject() (
       password = userDTO.password
     )
 
-    userServiceClient.createUser(createUser) map { reply =>
+    for {
+      createdUser <- userServiceClient.createUser(createUser)
+      _ <- {
+        val notification = NotificationRequest(
+          notificationType = NotificationType.NEWUSER,
+          message = s"User Created with Id: ${createdUser.id}",
+          userId = Some(createdUser.id)
+        )
+        val reply = notificationServiceClient.notifyMethod(notification)
+        reply.map(r =>
+          println(
+            s"Notification Success: ${r.success}, Notification Status: ${r.notificationStatus}  Notification Message: ${r.message}"
+          )
+        )
+      }
+    } yield {
       UserModel(
-        id = reply.id,
-        username = reply.username,
-        email = reply.email,
-        password = reply.password,
+        id = createdUser.id,
+        username = createdUser.username,
+        email = createdUser.email,
+        password = createdUser.password,
         role = "USER",
-        google_id = reply.googleId,
-        auth_provider = reply.authProvider.toString(),
-        is_deleted = reply.isDeleted,
-        created_at = new Timestamp(reply.createdAt),
-        updated_at = new Timestamp(reply.updatedAt)
+        google_id = createdUser.googleId,
+        auth_provider = createdUser.authProvider.toString(),
+        is_deleted = createdUser.isDeleted,
+        created_at = new Timestamp(createdUser.createdAt),
+        updated_at = new Timestamp(createdUser.updatedAt)
       )
     }
-
   }
 }

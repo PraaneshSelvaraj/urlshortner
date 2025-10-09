@@ -7,6 +7,7 @@ import example.urlshortner.user.grpc.{
   GoogleLoginRequest,
   LoginResponse
 }
+import example.urlshortner.notification.grpc._
 import play.api.libs.json.{Json, JsObject}
 
 import com.google.protobuf.empty.Empty
@@ -17,7 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class AuthService @Inject() (
-    userServiceClient: UserServiceClient
+    userServiceClient: UserServiceClient,
+    notificationServiceClient: NotificationServiceClient
 )(implicit ec: ExecutionContext) {
 
   def login(email: String, password: String): Future[String] = {
@@ -37,6 +39,23 @@ class AuthService @Inject() (
     val googleLoginRequest = GoogleLoginRequest(idToken = idToken)
 
     userServiceClient.googleLogin(googleLoginRequest).map { response =>
+      if (response.isUserCreated) {
+        val userId = response.user match {
+          case Some(user) => user.id
+          case None       => 0L
+        }
+        val notification = NotificationRequest(
+          notificationType = NotificationType.NEWUSER,
+          message = s"User Created with Id: ${userId}",
+          userId = Some(userId)
+        )
+        val reply = notificationServiceClient.notifyMethod(notification)
+        reply.map(r =>
+          println(
+            s"Notification Success: ${r.success}, Notification Status: ${r.notificationStatus}  Notification Message: ${r.message}"
+          )
+        )
+      }
       response.user match {
         case Some(user) =>
           Json.obj(

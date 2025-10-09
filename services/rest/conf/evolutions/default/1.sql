@@ -40,7 +40,7 @@ CREATE TABLE notification_types(
     name VARCHAR(20) NOT NULL UNIQUE
 );
 
-INSERT INTO notification_types (name) VALUES ('NEWURL'), ('TRESHOLD');
+INSERT INTO notification_types (name) VALUES ('NEWURL'), ('TRESHOLD'), ('NEWUSER');
 
 CREATE TABLE notification_statuses(
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -51,7 +51,8 @@ INSERT INTO notification_statuses (name) VALUES ('SUCCESS'), ('FAILURE'), ('PEND
 
 CREATE TABLE notifications(
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    short_code VARCHAR(10) NOT NULL,
+    short_code VARCHAR(10),
+    user_id BIGINT,
     notification_type_id INT NOT NULL,
     notification_status_id INT NOT NULL,
     message VARCHAR(2048) NOT NULL,
@@ -60,7 +61,9 @@ CREATE TABLE notifications(
     CONSTRAINT fk_notification_status
         FOREIGN KEY (notification_status_id) REFERENCES notification_statuses(id),
     CONSTRAINT fk_notification_type
-        FOREIGN KEY (notification_type_id) REFERENCES notification_types(id)
+        FOREIGN KEY (notification_type_id) REFERENCES notification_types(id),
+    CONSTRAINT fk_notification_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 # --- !Downs

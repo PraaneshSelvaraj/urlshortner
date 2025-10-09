@@ -34,9 +34,28 @@ class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
       n <- notifications
       t <- notificationTypes if n.notification_type_id === t.id
       status <- notificationStatuses if n.notification_status_id === status.id
-    } yield (n.id, n.short_code, t.name, status.name, n.message, n.created_at, n.updated_at)).result
-      .map(_.map { case (id, short_code, typeName, status, message, created_at, updated_at) =>
-        NotificationDTO(id, short_code, typeName, status, message, created_at, updated_at)
+    } yield (
+      n.id,
+      n.short_code,
+      n.user_id,
+      t.name,
+      status.name,
+      n.message,
+      n.created_at,
+      n.updated_at
+    )).result
+      .map(_.map {
+        case (id, short_code, user_id, typeName, status, message, created_at, updated_at) =>
+          NotificationDTO(
+            id,
+            short_code,
+            user_id,
+            typeName,
+            status,
+            message,
+            created_at,
+            updated_at
+          )
       })
   )
 

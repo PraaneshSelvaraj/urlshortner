@@ -11,6 +11,7 @@ option java_package = "example.urlshortner.notification.grpc";
 enum NotificationType {
   NEWURL = 0;
   TRESHOLD = 1;
+  NEWUSER = 2;
 }
 
 enum NotificationStatus {
@@ -22,7 +23,8 @@ enum NotificationStatus {
 message NotificationRequest {
   NotificationType notificationType = 1;
   string message = 2;
-  string shortCode = 3;
+  optional string shortCode = 3;
+  optional int64 userId = 4;
 }
 
 message NotificationReply {
@@ -33,10 +35,11 @@ message NotificationReply {
 
 message Notification {
   int64 id = 1;
-  string short_code = 2;
-  NotificationType notificationType = 3;
-  NotificationStatus notificationStatus = 4;
-  string message = 5;
+  optional string short_code = 2;
+  optional int64 userId = 3;
+  NotificationType notificationType = 4;
+  NotificationStatus notificationStatus = 5;
+  string message = 6;
 }
 
 message GetNotificationsResponse {

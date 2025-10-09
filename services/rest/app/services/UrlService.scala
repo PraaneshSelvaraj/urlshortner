@@ -48,7 +48,7 @@ class UrlService @Inject() (
         val notification = NotificationRequest(
           notificationType = NotificationType.NEWURL,
           message = s"URL Created for ${urlAdded.long_url}",
-          shortCode = urlAdded.short_code
+          shortCode = Some(urlAdded.short_code)
         )
         val reply = notificationServiceClient.notifyMethod(notification)
         reply.map(r =>
@@ -82,7 +82,7 @@ class UrlService @Inject() (
           val notification = NotificationRequest(
             notificationType = NotificationType.TRESHOLD,
             message = s"URL Crossed the Threshold for ${url.long_url}",
-            shortCode = shortCode
+            shortCode = Option(shortCode)
           )
           val reply = notificationServiceClient.notifyMethod(notification)
           reply.map(r =>
@@ -119,6 +119,7 @@ class UrlService @Inject() (
         Notification(
           id = notification.id,
           short_code = notification.shortCode,
+          user_id = notification.userId,
           notificationType = notification.notificationType.toString(),
           notificationStatus = notification.notificationStatus.toString(),
           message = notification.message

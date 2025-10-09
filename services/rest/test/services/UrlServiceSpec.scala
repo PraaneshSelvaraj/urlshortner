@@ -237,7 +237,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       val grpcNotifications = Seq(
         example.urlshortner.notification.grpc.Notification(
           id = 1,
-          shortCode = "abc",
+          shortCode = Some("abc"),
           notificationType = NotificationType.NEWURL,
           message = "New URL created"
         )
@@ -251,7 +251,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       whenReady(result) { notifications =>
         notifications.size mustBe 1
         val notification = notifications.head
-        notification.short_code mustBe "abc"
+        notification.short_code mustBe Some("abc")
         notification.message mustBe "New URL created"
         notification.notificationType mustBe NotificationType.NEWURL.toString
         notification.notificationStatus mustBe "SUCCESS"

@@ -379,7 +379,8 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
 
       val n1 = Notification(
         id = 1L,
-        short_code = "abc123",
+        short_code = Some("abc123"),
+        user_id = None,
         notificationType = "NEWURL",
         notificationStatus = "SUCCESS",
         message = "created"
@@ -387,7 +388,8 @@ class UrlControllerSpec extends PlaySpec with MockitoSugar with DefaultAwaitTime
 
       val n2 = Notification(
         id = 2L,
-        short_code = "abc123",
+        short_code = Some("abc123"),
+        user_id = None,
         notificationType = "TRESHOLD",
         notificationStatus = "SUCCESS",
         message = "created"

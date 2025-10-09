@@ -5,7 +5,8 @@ import java.sql.Timestamp
 
 case class Notification(
     id: Long,
-    short_code: String,
+    short_code: Option[String],
+    user_id: Option[Long],
     notification_type_id: Int,
     notification_status_id: Int,
     message: String,

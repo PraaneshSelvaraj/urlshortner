@@ -30,12 +30,6 @@ class NotificationRouter @Inject() (
           status = Status.INVALID_ARGUMENT.withDescription("message is required")
         )
       )
-    } else if (in.shortCode.isEmpty) {
-      Future.failed(
-        new GrpcServiceException(
-          status = Status.INVALID_ARGUMENT.withDescription("shortCode is required")
-        )
-      )
     } else {
       val notificationTypeName = in.notificationType.toString()
 
@@ -65,6 +59,7 @@ class NotificationRouter @Inject() (
         newNotification = Notification(
           id = 0L,
           short_code = in.shortCode,
+          user_id = in.userId,
           notification_type_id = typeId,
           notification_status_id = statusId,
           message = in.message,
@@ -78,8 +73,17 @@ class NotificationRouter @Inject() (
             status = Status.INTERNAL.withDescription("Unable to add Notification due to db issue")
           )
         } else {
+          val shortCode = newNotification.short_code match {
+            case Some(code) => code
+            case None       => "None"
+          }
+          val userId = newNotification.user_id match {
+            case Some(id) => id.toString()
+            case None     => "None"
+          }
+
           println(
-            s"NOTIFICATION ($notificationTypeName) - status: PENDING - shortCode: ${newNotification.short_code} - message: ${newNotification.message}"
+            s"NOTIFICATION ($notificationTypeName) - status: SUCCESS - shortCode: $shortCode - userId: $userId - message: ${newNotification.message}"
           )
           NotificationReply(
             success = true,
@@ -98,6 +102,7 @@ class NotificationRouter @Inject() (
         val notificationType = notification.notificationType match {
           case "NEWURL"   => NotificationType.NEWURL
           case "TRESHOLD" => NotificationType.TRESHOLD
+          case "NEWUSER"  => NotificationType.NEWUSER
           case _ =>
             throw new NoSuchElementException(
               s"Unknown notification type: ${notification.notificationType}"
