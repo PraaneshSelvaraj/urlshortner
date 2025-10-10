@@ -47,8 +47,23 @@ message User {
   int64 updated_at = 10;
 }
 
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserResponse {
+  int64 id = 1;
+  bool success = 2;
+}
+
 service UserService {
   rpc createUser(CreateUserRequest) returns (User);
   rpc userLogin(LoginRequest) returns (LoginResponse);
   rpc googleLogin(GoogleLoginRequest) returns (LoginResponse);
+  rpc getUserById(GetUserRequest) returns (User);
+  rpc deleteUserById(DeleteUserRequest) returns (DeleteUserResponse);
 }

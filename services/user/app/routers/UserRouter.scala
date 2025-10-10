@@ -253,6 +253,86 @@ class UserRouter @Inject() (
     }
   }
 
+  override def getUserById(in: GetUserRequest): Future[User] = {
+    if (in.id <= 0) {
+      Future.failed(
+        new GrpcServiceException(
+          status = Status.INVALID_ARGUMENT.withDescription("ID should be valid.")
+        )
+      )
+    } else {
+      userRepo.getUserById(in.id) flatMap {
+        case Some(user) =>
+          if (user.is_deleted) {
+            Future.failed(
+              new GrpcServiceException(
+                status =
+                  Status.NOT_FOUND.withDescription(s"Unable to find user with Id: ${user.id}")
+              )
+            )
+          } else {
+            val authProvider = user.auth_provider match {
+              case "LOCAL"  => AuthProvider.LOCAL
+              case "GOOGLE" => AuthProvider.GOOGLE
+              case _ =>
+                throw new NoSuchElementException(
+                  s"Unknown notification type: ${user.auth_provider}"
+                )
+            }
+
+            Future.successful(
+              User(
+                id = user.id,
+                username = user.username,
+                email = user.email,
+                password = user.password,
+                role = user.role,
+                googleId = user.google_id,
+                authProvider = authProvider,
+                isDeleted = user.is_deleted,
+                createdAt = user.created_at.getTime(),
+                updatedAt = user.updated_at.getTime()
+              )
+            )
+
+          }
+        case None =>
+          Future.failed(
+            new GrpcServiceException(
+              status = Status.NOT_FOUND.withDescription(s"Unable to find User with Id: ${in.id}")
+            )
+          )
+      }
+    }
+  }
+
+  override def deleteUserById(in: DeleteUserRequest): Future[DeleteUserResponse] = {
+    if (in.id <= 0) {
+      Future.failed(
+        new GrpcServiceException(
+          status = Status.INVALID_ARGUMENT.withDescription("ID should be valid.")
+        )
+      )
+    } else {
+      userRepo.deleteUserById(in.id) flatMap { rowsAffected =>
+        if (rowsAffected == 0) {
+          Future.failed(
+            new GrpcServiceException(
+              status = Status.UNKNOWN.withDescription(s"Unable to User with Id: ${in.id}")
+            )
+          )
+        } else {
+          Future.successful(
+            DeleteUserResponse(
+              id = in.id,
+              success = true
+            )
+          )
+        }
+      }
+    }
+  }
+
   private def mapToProtoUser(user: models.User): User = {
     User(
       id = user.id,

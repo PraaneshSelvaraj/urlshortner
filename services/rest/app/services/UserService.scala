@@ -53,4 +53,36 @@ class UserService @Inject() (
       )
     }
   }
+
+  def getUserById(id: Long): Future[UserModel] = {
+    val getUserRequest = GetUserRequest(
+      id = id
+    )
+    for {
+      user <- userServiceClient.getUserById(getUserRequest)
+    } yield {
+      UserModel(
+        id = user.id,
+        username = user.username,
+        email = user.email,
+        password = user.password,
+        role = user.role,
+        google_id = user.googleId,
+        auth_provider = user.authProvider.toString(),
+        is_deleted = user.isDeleted,
+        created_at = new Timestamp(user.createdAt),
+        updated_at = new Timestamp(user.updatedAt)
+      )
+    }
+  }
+
+  def deleteUserById(id: Long): Future[Boolean] = {
+    val deleteUserRequest = DeleteUserRequest(
+      id = id
+    )
+
+    for {
+      reply <- userServiceClient.deleteUserById(deleteUserRequest)
+    } yield reply.success
+  }
 }

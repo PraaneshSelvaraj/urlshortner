@@ -11,10 +11,13 @@ import java.sql.SQLException
 import io.grpc.StatusRuntimeException
 import io.grpc.{Status => grpcStatus}
 import org.mindrot.jbcrypt.BCrypt
+import auth.AuthenticatedAction
+import auth.AuthenticatedRequest
 
 class UserController @Inject() (
     val userService: UserService,
-    val controllerComponents: ControllerComponents
+    val controllerComponents: ControllerComponents,
+    val authenticatedAction: AuthenticatedAction
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
@@ -43,5 +46,58 @@ class UserController @Inject() (
       case None =>
         Future.successful(BadRequest(Json.obj(("message", "Request Body needs to be JSON"))))
     }
+  }
+
+  def getUserById(id: Long): Action[AnyContent] = authenticatedAction.async {
+    implicit req: AuthenticatedRequest[AnyContent] =>
+      userService
+        .getUserById(id)
+        .map(user =>
+          Ok(Json.obj(("message", s"User with Id: ${user.id} was fetched."), ("data", user)))
+        )
+        .recover {
+          case e: StatusRuntimeException
+              if e.getStatus.getCode == grpcStatus.Code.INVALID_ARGUMENT =>
+            NotFound(s"Unable to find User with Id: $id")
+
+          case e: StatusRuntimeException if e.getStatus.getCode == grpcStatus.Code.NOT_FOUND =>
+            NotFound(s"Unable to find User with Id: $id")
+
+          case e: StatusRuntimeException =>
+            InternalServerError(s"gRPC error: ${e.getStatus.getCode} - ${e.getMessage}")
+
+          case e: Exception =>
+            InternalServerError(s"ERROR OCCURRED: ${e.getMessage}, ${e.getClass}")
+        }
+  }
+
+  def deleteUserById(id: Long): Action[AnyContent] = authenticatedAction.async {
+    implicit req: AuthenticatedRequest[AnyContent] =>
+      if (req.user.id != id) {
+        Future.successful(
+          Forbidden(Json.obj(("message", "You can only delete your own account")))
+        )
+      } else {
+        userService
+          .deleteUserById(id)
+          .map(success =>
+            if (success) NoContent
+            else NotFound(Json.obj(("message", s"Unalbe to delete User with Id: $id")))
+          )
+          .recover {
+            case e: StatusRuntimeException
+                if e.getStatus.getCode == grpcStatus.Code.INVALID_ARGUMENT =>
+              NotFound(s"Unable to delete User with Id: $id")
+
+            case e: StatusRuntimeException if e.getStatus.getCode == grpcStatus.Code.UNKNOWN =>
+              NotFound(s"Unable to delete User with Id: $id")
+
+            case e: StatusRuntimeException =>
+              InternalServerError(s"gRPC error: ${e.getStatus.getCode} - ${e.getMessage}")
+
+            case e: Exception =>
+              InternalServerError(s"ERROR OCCURRED: ${e.getMessage}, ${e.getClass}")
+          }
+      }
   }
 }

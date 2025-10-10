@@ -18,6 +18,17 @@ class UserRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
   def getAllUsers: Future[Seq[User]] =
     dbConfig.db.run(users.result)
 
+  def getUserById(id: Long): Future[Option[User]] =
+    dbConfig.db.run(users.filter(_.id === id).result.headOption)
+
+  def deleteUserById(id: Long): Future[Int] =
+    dbConfig.db.run(
+      users
+        .filter(user => user.id === id && user.is_deleted === false)
+        .map(_.is_deleted)
+        .update(true)
+    )
+
   def addUser(user: User): Future[Long] = {
     val userToAdd = user.password match {
       case Some(password) if !password.startsWith("$2") =>

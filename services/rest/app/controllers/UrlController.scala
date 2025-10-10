@@ -113,7 +113,7 @@ class UrlController @Inject() (
   }
 
   def getNotifications: Action[AnyContent] = authenticatedAction.async {
-    implicit req: AuthenticatedRequest[AnyContent] =>
+    implicit req: Request[AnyContent] =>
       urlService.getNotifications map { notifications =>
         Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
       }

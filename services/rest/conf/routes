@@ -8,7 +8,12 @@ GET     /urls/:shortCode                  controllers.UrlController.getUrlByShor
 + nocsrf
 DELETE  /urls/:shortCode                  controllers.UrlController.deleteUrlByShortCode(shortCode: String)
 GET     /notifications                    controllers.UrlController.getNotifications()
++ nocsrf
 POST    /user                             controllers.UserController.addUser()
+GET     /user/:id                         controllers.UserController.getUserById(id: Long)
++ nocsrf
+DELETE  /user/:id                         controllers.UserController.deleteUserById(id: Long)
++ nocsrf
 POST    /auth/login                       controllers.AuthController.login()
 + nocsrf
 POST    /auth/google/login                controllers.AuthController.googleLogin()
