@@ -17,6 +17,7 @@ class StubAuthenticatedAction(
     userRepo: UserRepo,
     shouldAuthenticate: Boolean = true,
     userRole: String = "USER",
+    userId: Long = 1L,
     errorType: Option[String] = None
 )(implicit ec: ExecutionContext)
     extends AuthenticatedAction(
@@ -32,7 +33,7 @@ class StubAuthenticatedAction(
 
     if (shouldAuthenticate) {
       val testUser = User(
-        id = 1L,
+        id = userId,
         username = "testuser",
         email = "test@example.com",
         password = Some("hashedPassword123"),
