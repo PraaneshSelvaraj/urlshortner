@@ -48,7 +48,7 @@ class UserController @Inject() (
     }
   }
 
-  def getUserById(id: Long): Action[AnyContent] = authenticatedAction.async {
+  def getUserById(id: Long): Action[AnyContent] = authenticatedAction.forUser.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
       userService
         .getUserById(id)
@@ -71,7 +71,7 @@ class UserController @Inject() (
         }
   }
 
-  def deleteUserById(id: Long): Action[AnyContent] = authenticatedAction.async {
+  def deleteUserById(id: Long): Action[AnyContent] = authenticatedAction.forUser.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
       if (req.user.id != id) {
         Future.successful(

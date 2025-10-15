@@ -5,7 +5,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import dtos.UrlDto
 import exceptions.{TresholdReachedException, UrlExpiredException}
-import models.{Notification, Url}
+import models.{Notification, Url, User}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
@@ -42,13 +42,16 @@ class UrlControllerSpec
   val mockUserRepo: UserRepo = mock[UserRepo]
   val mockConfig: Configuration = mock[Configuration]
 
+  val authenticatedUserId = 1L
+  val otherUserId = 2L
+
   val stubAuthenticatedAction = new StubAuthenticatedAction(
     new BodyParsers.Default(stubControllerComponents.parsers),
     mockJwtUtility,
     mockUserRepo,
     shouldAuthenticate = true,
     userRole = "USER",
-    userId = 1L
+    userId = authenticatedUserId
   )
 
   val defaultBodyParser = new BodyParsers.Default()(mat)
@@ -68,9 +71,31 @@ class UrlControllerSpec
 
   val sampleUrl = Url(
     id = 1L,
-    user_id = 1L,
+    user_id = authenticatedUserId,
     short_code = "abc123",
     long_url = "https://example.com",
+    clicks = 0,
+    created_at = Timestamp.from(Instant.now()),
+    updated_at = Timestamp.from(Instant.now()),
+    expires_at = Timestamp.from(Instant.now().plusSeconds(3600))
+  )
+
+  val ownedUrl = Url(
+    id = 1L,
+    user_id = authenticatedUserId,
+    short_code = "abc123",
+    long_url = "https://example.com",
+    clicks = 0,
+    created_at = Timestamp.from(Instant.now()),
+    updated_at = Timestamp.from(Instant.now()),
+    expires_at = Timestamp.from(Instant.now().plusSeconds(3600))
+  )
+
+  val otherUserUrl = Url(
+    id = 2L,
+    user_id = otherUserId,
+    short_code = "xyz789",
+    long_url = "https://other.com",
     clicks = 0,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now()),
@@ -283,7 +308,9 @@ class UrlControllerSpec
 
   "UrlController#deleteUrlByShortCode" should {
 
-    "delete URL successfully" in {
+    "delete URL successfully when user owns it" in {
+      when(mockUrlService.getUrlByShortCode("abc123"))
+        .thenReturn(Future.successful(Some(ownedUrl)))
       when(mockUrlService.deleteUrlByShortCode("abc123"))
         .thenReturn(Future.successful(1))
 
@@ -293,12 +320,29 @@ class UrlControllerSpec
       val result: Future[Result] = controller.deleteUrlByShortCode("abc123")(request)
 
       status(result) mustBe NO_CONTENT
+      verify(mockUrlService).getUrlByShortCode("abc123")
       verify(mockUrlService).deleteUrlByShortCode("abc123")
     }
 
-    "return 404 when URL not found (0 rows affected)" in {
-      when(mockUrlService.deleteUrlByShortCode("notfound"))
-        .thenReturn(Future.successful(0))
+    "return 403 Forbidden when trying to delete another user's URL" in {
+      when(mockUrlService.getUrlByShortCode("xyz789"))
+        .thenReturn(Future.successful(Some(otherUserUrl)))
+
+      val request = FakeRequest(DELETE, "/urls/xyz789")
+        .withHeaders("Authorization" -> "Bearer valid_token")
+
+      val result: Future[Result] = controller.deleteUrlByShortCode("xyz789")(request)
+
+      status(result) mustBe FORBIDDEN
+      (contentAsJson(result) \ "message").as[String] mustBe "You can only delete your own URLs"
+
+      verify(mockUrlService).getUrlByShortCode("xyz789")
+      verify(mockUrlService, never()).deleteUrlByShortCode(any[String]())
+    }
+
+    "return 404 when URL not found" in {
+      when(mockUrlService.getUrlByShortCode("notfound"))
+        .thenReturn(Future.successful(None))
 
       val request = FakeRequest(DELETE, "/urls/notfound")
         .withHeaders("Authorization" -> "Bearer valid_token")
@@ -307,13 +351,18 @@ class UrlControllerSpec
 
       status(result) mustBe NOT_FOUND
       (contentAsJson(result) \ "message").as[String] must include(
-        "Unable to find Url with shortCode notfound"
+        "Unable to find URL with shortCode notfound"
       )
+
+      verify(mockUrlService).getUrlByShortCode("notfound")
+      verify(mockUrlService, never()).deleteUrlByShortCode(any[String]())
     }
 
-    "return 404 when NoSuchElementException thrown" in {
+    "return 404 when URL not found (0 rows affected)" in {
+      when(mockUrlService.getUrlByShortCode("abc123"))
+        .thenReturn(Future.successful(Some(ownedUrl)))
       when(mockUrlService.deleteUrlByShortCode("abc123"))
-        .thenReturn(Future.failed(new NoSuchElementException("Not found")))
+        .thenReturn(Future.successful(0))
 
       val request = FakeRequest(DELETE, "/urls/abc123")
         .withHeaders("Authorization" -> "Bearer valid_token")
@@ -322,12 +371,12 @@ class UrlControllerSpec
 
       status(result) mustBe NOT_FOUND
       (contentAsJson(result) \ "message").as[String] must include(
-        "Unable to find Url with shortCode abc123"
+        "Unable to delete URL with shortCode abc123"
       )
     }
 
-    "return 500 when generic exception occurs" in {
-      when(mockUrlService.deleteUrlByShortCode("abc123"))
+    "return 500 when fetching URL throws exception" in {
+      when(mockUrlService.getUrlByShortCode("abc123"))
         .thenReturn(Future.failed(new Exception("Database error")))
 
       val request = FakeRequest(DELETE, "/urls/abc123")
@@ -336,7 +385,24 @@ class UrlControllerSpec
       val result: Future[Result] = controller.deleteUrlByShortCode("abc123")(request)
 
       status(result) mustBe INTERNAL_SERVER_ERROR
-      (contentAsJson(result) \ "message").as[String] mustBe "Error processing redirect"
+      (contentAsJson(result) \ "message").as[String] mustBe "Error processing request"
+      (contentAsJson(result) \ "error").as[String] mustBe "Database error"
+    }
+
+    "return 500 when deletion throws exception" in {
+      when(mockUrlService.getUrlByShortCode("abc123"))
+        .thenReturn(Future.successful(Some(ownedUrl)))
+      when(mockUrlService.deleteUrlByShortCode("abc123"))
+        .thenReturn(Future.failed(new Exception("Delete failed")))
+
+      val request = FakeRequest(DELETE, "/urls/abc123")
+        .withHeaders("Authorization" -> "Bearer valid_token")
+
+      val result: Future[Result] = controller.deleteUrlByShortCode("abc123")(request)
+
+      status(result) mustBe INTERNAL_SERVER_ERROR
+      (contentAsJson(result) \ "message").as[String] mustBe "Error deleting URL"
+      (contentAsJson(result) \ "error").as[String] mustBe "Delete failed"
     }
   }
 

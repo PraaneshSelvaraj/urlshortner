@@ -20,7 +20,7 @@ class UrlController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  def addUrl(): Action[AnyContent] = authenticatedAction.async {
+  def addUrl(): Action[AnyContent] = authenticatedAction.forUser.async {
     implicit request: AuthenticatedRequest[AnyContent] =>
       val userId = request.user.id
 
@@ -78,12 +78,12 @@ class UrlController @Inject() (
       }
   }
 
-  def getUrls: Action[AnyContent] = authenticatedAction.async {
+  def getUrls: Action[AnyContent] = authenticatedAction.forUser.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
       urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
   }
 
-  def getUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
+  def getUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.forUser.async {
     implicit req: Request[AnyContent] =>
       urlService.getUrlByShortCode(shortCode) map {
         case Some(url) => Ok(Json.obj(("message", s"Url with shortcode $shortCode"), ("data", url)))
@@ -92,27 +92,48 @@ class UrlController @Inject() (
       }
   }
 
-  def deleteUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.async {
-    implicit req: AuthenticatedRequest[AnyContent] =>
-      urlService
-        .deleteUrlByShortCode(shortCode)
-        .map(rowsAffected =>
-          if (rowsAffected <= 0)
-            NotFound(Json.obj(("message", s"Unable to find Url with shortCode $shortCode")))
-          else NoContent
-        )
-        .recover {
-          case _: NoSuchElementException =>
-            NotFound(Json.obj(("message", s"Unable to find Url with shortCode $shortCode")))
-          case ex: Exception =>
-            println(s"Error Deleting URL: ${ex.getMessage}")
-            InternalServerError(
-              Json.obj("message" -> "Error processing redirect", "error" -> ex.getMessage)
+  def deleteUrlByShortCode(shortCode: String): Action[AnyContent] =
+    authenticatedAction.forUser.async { implicit req: AuthenticatedRequest[AnyContent] =>
+      (for {
+        urlOption <- urlService.getUrlByShortCode(shortCode)
+
+        result <- urlOption match {
+          case Some(url) =>
+            if (url.user_id != req.user.id && req.user.role != "ADMIN") {
+              Future.successful(
+                Forbidden(Json.obj("message" -> "You can only delete your own URLs"))
+              )
+            } else {
+              urlService
+                .deleteUrlByShortCode(shortCode)
+                .map { rowsAffected =>
+                  if (rowsAffected > 0) NoContent
+                  else
+                    NotFound(
+                      Json.obj("message" -> s"Unable to delete URL with shortCode $shortCode")
+                    )
+                }
+                .recover { case ex: Exception =>
+                  println(s"Error Deleting URL: ${ex.getMessage}")
+                  InternalServerError(
+                    Json.obj("message" -> "Error deleting URL", "error" -> ex.getMessage)
+                  )
+                }
+            }
+          case None =>
+            Future.successful(
+              NotFound(Json.obj("message" -> s"Unable to find URL with shortCode $shortCode"))
             )
         }
-  }
+      } yield result).recover { case ex: Exception =>
+        println(s"Error fetching URL: ${ex.getMessage}")
+        InternalServerError(
+          Json.obj("message" -> "Error processing request", "error" -> ex.getMessage)
+        )
+      }
+    }
 
-  def getNotifications: Action[AnyContent] = authenticatedAction.async {
+  def getNotifications: Action[AnyContent] = authenticatedAction.forUser.async {
     implicit req: Request[AnyContent] =>
       urlService.getNotifications map { notifications =>
         Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
