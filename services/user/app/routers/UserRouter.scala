@@ -43,12 +43,16 @@ class UserRouter @Inject() (
         )
       )
     } else {
+      val userRole = in.userRole match {
+        case Some(UserRole.ADMIN) => "ADMIN"
+        case _                    => "USER"
+      }
       val newUser = models.User(
         id = 0L,
         username = in.username,
         email = in.email,
         password = Some(in.password),
-        role = "USER",
+        role = userRole,
         google_id = None,
         auth_provider = "LOCAL",
         is_deleted = false,
@@ -64,7 +68,10 @@ class UserRouter @Inject() (
           username = newUser.username,
           email = newUser.email,
           password = newUser.password,
-          role = newUser.role,
+          role = newUser.role match {
+            case "USER"  => UserRole.USER
+            case "ADMIN" => UserRole.ADMIN
+          },
           googleId = None,
           authProvider = AuthProvider.LOCAL,
           isDeleted = newUser.is_deleted,
@@ -280,13 +287,22 @@ class UserRouter @Inject() (
                 )
             }
 
+            val userRole = user.role match {
+              case "ADMIN" => UserRole.ADMIN
+              case "USER"  => UserRole.USER
+              case _ =>
+                throw new NoSuchElementException(
+                  s"Unknown user role: ${user.role}"
+                )
+            }
+
             Future.successful(
               User(
                 id = user.id,
                 username = user.username,
                 email = user.email,
                 password = user.password,
-                role = user.role,
+                role = userRole,
                 googleId = user.google_id,
                 authProvider = authProvider,
                 isDeleted = user.is_deleted,
@@ -339,7 +355,10 @@ class UserRouter @Inject() (
       username = user.username,
       email = user.email,
       password = None,
-      role = user.role,
+      role = user.role match {
+        case "ADMIN" => UserRole.ADMIN
+        case "USER"  => UserRole.USER
+      },
       googleId = user.google_id,
       authProvider =
         if (user.auth_provider == "GOOGLE") AuthProvider.GOOGLE else AuthProvider.LOCAL,

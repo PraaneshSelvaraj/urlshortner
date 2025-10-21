@@ -54,6 +54,15 @@ class UrlControllerSpec
     userId = authenticatedUserId
   )
 
+  val stubAdminAuthenticatedAction = new StubAuthenticatedAction(
+    new BodyParsers.Default(stubControllerComponents.parsers),
+    mockJwtUtility,
+    mockUserRepo,
+    shouldAuthenticate = true,
+    userRole = "ADMIN",
+    userId = authenticatedUserId
+  )
+
   val defaultBodyParser = new BodyParsers.Default()(mat)
   val mockRateLimiter = new RateLimiterAction(
     mockRedisService,
@@ -67,6 +76,13 @@ class UrlControllerSpec
     mockUrlService,
     mockRateLimiter,
     stubAuthenticatedAction
+  )
+
+  val adminController = new UrlController(
+    stubControllerComponents,
+    mockUrlService,
+    mockRateLimiter,
+    stubAdminAuthenticatedAction
   )
 
   val sampleUrl = Url(
@@ -253,7 +269,7 @@ class UrlControllerSpec
       val request = FakeRequest(GET, "/urls")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = controller.getUrls(request)
+      val result: Future[Result] = adminController.getUrls(request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "message").as[String] mustBe "List of Urls"
@@ -267,7 +283,7 @@ class UrlControllerSpec
       val request = FakeRequest(GET, "/urls")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = controller.getUrls(request)
+      val result: Future[Result] = adminController.getUrls(request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "urls").as[Seq[Url]] mustBe empty
@@ -434,7 +450,7 @@ class UrlControllerSpec
       val request = FakeRequest(GET, "/notifications")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = controller.getNotifications(request)
+      val result: Future[Result] = adminController.getNotifications(request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "message").as[String] mustBe "List of all Notifications"
@@ -448,7 +464,7 @@ class UrlControllerSpec
       val request = FakeRequest(GET, "/notifications")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = controller.getNotifications(request)
+      val result: Future[Result] = adminController.getNotifications(request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "notifications").as[Seq[Notification]] mustBe empty

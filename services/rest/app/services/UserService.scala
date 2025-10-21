@@ -18,10 +18,15 @@ class UserService @Inject() (
 
   def addUser(userDTO: CreateUserDTO): Future[UserModel] = {
 
+    val userRole = userDTO.role match {
+      case Some(role) if role == "ADMIN" => UserRole.ADMIN
+      case _                             => UserRole.USER
+    }
     val createUser = CreateUserRequest(
       username = userDTO.username,
       email = userDTO.email,
-      password = userDTO.password
+      password = userDTO.password,
+      userRole = Some(userRole)
     )
 
     for {
@@ -45,7 +50,7 @@ class UserService @Inject() (
         username = createdUser.username,
         email = createdUser.email,
         password = createdUser.password,
-        role = "USER",
+        role = createdUser.role.toString(),
         google_id = createdUser.googleId,
         auth_provider = createdUser.authProvider.toString(),
         is_deleted = createdUser.isDeleted,
@@ -67,7 +72,7 @@ class UserService @Inject() (
         username = user.username,
         email = user.email,
         password = user.password,
-        role = user.role,
+        role = user.role.toString(),
         google_id = user.googleId,
         auth_provider = user.authProvider.toString(),
         is_deleted = user.isDeleted,

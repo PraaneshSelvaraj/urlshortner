@@ -20,7 +20,7 @@ class UrlController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  def addUrl(): Action[AnyContent] = authenticatedAction.forUser.async {
+  def addUrl(): Action[AnyContent] = authenticatedAction.forUserOrAdmin.async {
     implicit request: AuthenticatedRequest[AnyContent] =>
       val userId = request.user.id
 
@@ -78,22 +78,22 @@ class UrlController @Inject() (
       }
   }
 
-  def getUrls: Action[AnyContent] = authenticatedAction.forUser.async {
+  def getUrls: Action[AnyContent] = authenticatedAction.forAdmin.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
       urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
   }
 
-  def getUrlByShortCode(shortCode: String): Action[AnyContent] = authenticatedAction.forUser.async {
-    implicit req: Request[AnyContent] =>
+  def getUrlByShortCode(shortCode: String): Action[AnyContent] =
+    authenticatedAction.forUserOrAdmin.async { implicit req: Request[AnyContent] =>
       urlService.getUrlByShortCode(shortCode) map {
         case Some(url) => Ok(Json.obj(("message", s"Url with shortcode $shortCode"), ("data", url)))
         case None =>
           NotFound(Json.obj(("message", s"Unable to find Url with shortcode $shortCode")))
       }
-  }
+    }
 
   def deleteUrlByShortCode(shortCode: String): Action[AnyContent] =
-    authenticatedAction.forUser.async { implicit req: AuthenticatedRequest[AnyContent] =>
+    authenticatedAction.forUserOrAdmin.async { implicit req: AuthenticatedRequest[AnyContent] =>
       (for {
         urlOption <- urlService.getUrlByShortCode(shortCode)
 
@@ -133,7 +133,7 @@ class UrlController @Inject() (
       }
     }
 
-  def getNotifications: Action[AnyContent] = authenticatedAction.forUser.async {
+  def getNotifications: Action[AnyContent] = authenticatedAction.forAdmin.async {
     implicit req: Request[AnyContent] =>
       urlService.getNotifications map { notifications =>
         Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))

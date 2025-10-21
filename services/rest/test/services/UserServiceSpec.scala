@@ -15,6 +15,7 @@ import example.urlshortner.notification.grpc.{
   NotificationType
 }
 import example.urlshortner.user.grpc.{
+  UserRole,
   UserServiceClient,
   CreateUserRequest,
   User,
@@ -78,7 +79,10 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
     username = sampleUserModel.username,
     email = sampleUserModel.email,
     password = sampleUserModel.password,
-    role = sampleUserModel.role,
+    role = sampleUserModel.role match {
+      case "ADMIN" => UserRole.ADMIN
+      case "USER"  => UserRole.USER
+    },
     googleId = sampleUserModel.google_id,
     authProvider = AuthProvider.LOCAL,
     isDeleted = sampleUserModel.is_deleted,
@@ -92,7 +96,8 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val userDTO = CreateUserDTO(
         username = "newuser",
         email = "newuser@example.com",
-        password = hashedPassword
+        password = hashedPassword,
+        role = Some("USER")
       )
 
       when(mockUserServiceClient.createUser(any[CreateUserRequest]()))
@@ -120,7 +125,8 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val userDTO = CreateUserDTO(
         username = "newuser",
         email = "newuser@example.com",
-        password = hashedPassword
+        password = hashedPassword,
+        role = Some("USER")
       )
 
       when(mockUserServiceClient.createUser(any[CreateUserRequest]()))
@@ -137,7 +143,8 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val googleUser = CreateUserDTO(
         username = "googleuser",
         email = "google@example.com",
-        password = "" // No password for OAuth
+        password = "", // No password for OAuth
+        role = Some("USER")
       )
 
       val grpcGoogleUser = User(
@@ -145,7 +152,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
         username = "googleuser",
         email = "google@example.com",
         password = None,
-        role = "USER",
+        role = UserRole.USER,
         googleId = Some("google_12345"),
         authProvider = AuthProvider.GOOGLE,
         isDeleted = false,

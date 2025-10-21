@@ -80,7 +80,8 @@ class UserControllerSpec
       val createUserDTO = CreateUserDTO(
         username = "newuser",
         email = "newuser@example.com",
-        password = "password123"
+        password = "password123",
+        role = Some("USER")
       )
 
       when(mockUserService.addUser(any[CreateUserDTO]()))

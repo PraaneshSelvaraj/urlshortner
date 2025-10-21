@@ -48,7 +48,7 @@ class UserController @Inject() (
     }
   }
 
-  def getUserById(id: Long): Action[AnyContent] = authenticatedAction.forUser.async {
+  def getUserById(id: Long): Action[AnyContent] = authenticatedAction.forUserOrAdmin.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
       userService
         .getUserById(id)
@@ -71,9 +71,9 @@ class UserController @Inject() (
         }
   }
 
-  def deleteUserById(id: Long): Action[AnyContent] = authenticatedAction.forUser.async {
+  def deleteUserById(id: Long): Action[AnyContent] = authenticatedAction.forUserOrAdmin.async {
     implicit req: AuthenticatedRequest[AnyContent] =>
-      if (req.user.id != id) {
+      if (req.user.id != id && req.user.role != "ADMIN") {
         Future.successful(
           Forbidden(Json.obj(("message", "You can only delete your own account")))
         )

@@ -66,7 +66,7 @@ class AuthService @Inject() (
               "id" -> user.id,
               "username" -> user.username,
               "email" -> user.email,
-              "role" -> user.role,
+              "role" -> user.role.toString(),
               "authProvider" -> (if (user.authProvider.isGoogle) "GOOGLE" else "LOCAL")
             )
           )
