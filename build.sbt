@@ -8,7 +8,18 @@ lazy val commonSettings = Seq(
   dockerExposedPorts := Seq(9000),
   dockerBaseImage := "eclipse-temurin:21-jdk",
   dockerChmodType := DockerChmodType.UserGroupWriteExecute,
-  dockerPermissionStrategy := DockerPermissionStrategy.CopyChown
+  dockerPermissionStrategy := DockerPermissionStrategy.CopyChown,
+  coverageExcludedPackages := Seq(
+    ".*\\.protobuf\\..*",
+    ".*\\.grpc\\..*",
+    ".*\\.scalapb\\..*",
+    ".*\\.proto$",
+    ".*\\.generated\\..*",
+    "controllers\\.javascript\\..*",
+    "router\\..*",
+    ".*\\.Reverse.*",
+    ".*\\.Routes.*"
+  ).mkString(";")
 )
 
 lazy val root = (project in file("."))
