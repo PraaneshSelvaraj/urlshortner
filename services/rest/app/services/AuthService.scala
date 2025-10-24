@@ -5,7 +5,9 @@ import example.urlshortner.user.grpc.{
   UserServiceClient,
   LoginRequest,
   GoogleLoginRequest,
-  LoginResponse
+  LoginResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse
 }
 import example.urlshortner.notification.grpc._
 import play.api.libs.json.{Json, JsObject}
@@ -22,17 +24,17 @@ class AuthService @Inject() (
     notificationServiceClient: NotificationServiceClient
 )(implicit ec: ExecutionContext) {
 
-  def login(email: String, password: String): Future[String] = {
+  def login(email: String, password: String): Future[(String, String)] = {
     val loginRequest = LoginRequest(email, password)
     for {
       reply <- userServiceClient.userLogin(loginRequest)
-      token <-
+      tokens <-
         if (reply.success) {
-          Future.successful(reply.token)
+          Future.successful((reply.accessToken, reply.refreshToken))
         } else {
           Future.failed(new Exception(reply.message))
         }
-    } yield token
+    } yield tokens
   }
 
   def googleLogin(idToken: String): Future[JsObject] = {
@@ -61,7 +63,8 @@ class AuthService @Inject() (
           Json.obj(
             "success" -> true,
             "message" -> response.message,
-            "token" -> response.token,
+            "accessToken" -> response.accessToken,
+            "refreshToken" -> response.refreshToken,
             "user" -> Json.obj(
               "id" -> user.id,
               "username" -> user.username,
@@ -74,9 +77,17 @@ class AuthService @Inject() (
           Json.obj(
             "success" -> true,
             "message" -> response.message,
-            "token" -> response.token
+            "accessToken" -> response.accessToken,
+            "refreshToken" -> response.refreshToken
           )
       }
+    }
+  }
+
+  def refreshTokens(token: String): Future[(String, String)] = {
+    val request = RefreshTokenRequest(refreshToken = token)
+    userServiceClient.refreshTokens(request).map { reply =>
+      (reply.accessToken, reply.refreshToken)
     }
   }
 

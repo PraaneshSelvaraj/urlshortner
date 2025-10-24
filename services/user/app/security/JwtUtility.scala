@@ -14,7 +14,11 @@ class JwtUtility @Inject() (configuration: Configuration) {
 
   private val secretKey = configuration.get[String]("jwt.secretKey")
 
-  private val expirationSeconds = configuration.get[Int]("jwt.expirationSecond")
+  private val expirationSeconds = configuration.get[Int]("jwt.expirationSeconds")
+
+  private val refreshExpirationSeconds = configuration.get[Int]("jwt.refreshExpirationSeconds")
+
+  private val refreshSecretKey = configuration.get[String]("jwt.refreshSecretKey")
 
   private val algorithm =
     JwtAlgorithm.fromString(configuration.get[String]("jwt.algorithm")) match {
@@ -38,4 +42,25 @@ class JwtUtility @Inject() (configuration: Configuration) {
     JwtJson.encode(claim, secretKey, algorithm)
   }
 
+  def createRefreshToken(email: String, role: String): String = {
+    val claim = JwtClaim(
+      content = Json.obj("email" -> email, "role" -> role, "type" -> "refresh").toString()
+    ).issuedNow.expiresIn(refreshExpirationSeconds)
+
+    JwtJson.encode(claim, refreshSecretKey, algorithm)
+  }
+
+  def decodeRefreshToken(token: String): Try[JwtClaim] = {
+    JwtJson.decode(token, refreshSecretKey, Seq(algorithm))
+  }
+
+  def getRefreshClaimsData(claim: JwtClaim): Option[(String, String)] = Try {
+    val jsonContent = Json.parse(claim.content)
+    val email = (jsonContent \ "email").as[String]
+    val role = (jsonContent \ "role").as[String]
+    val tokenType = (jsonContent \ "type").asOpt[String]
+
+    if (tokenType.contains("refresh")) (email, role)
+    else throw new IllegalArgumentException("Not a refresh token")
+  }.toOption
 }

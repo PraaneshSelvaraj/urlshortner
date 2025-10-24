@@ -11,6 +11,7 @@ case class User(
     role: String,
     google_id: Option[String],
     auth_provider: String,
+    refresh_token: Option[String],
     is_deleted: Boolean,
     created_at: Timestamp,
     updated_at: Timestamp

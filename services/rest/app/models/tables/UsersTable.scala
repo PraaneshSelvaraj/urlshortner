@@ -14,6 +14,7 @@ class UsersTable(tag: Tag) extends Table[User](tag, "users") {
   def role: Rep[String] = column[String]("role")
   def google_id: Rep[Option[String]] = column[Option[String]]("google_id")
   def auth_provider: Rep[String] = column[String]("auth_provider")
+  def refresh_token: Rep[Option[String]] = column[Option[String]]("refresh_token")
   def is_deleted: Rep[Boolean] = column[Boolean]("is_deleted")
   def created_at: Rep[Timestamp] = column[Timestamp]("created_at")
   def updated_at: Rep[Timestamp] = column[Timestamp]("updated_at")
@@ -26,6 +27,7 @@ class UsersTable(tag: Tag) extends Table[User](tag, "users") {
     role,
     google_id,
     auth_provider,
+    refresh_token,
     is_deleted,
     created_at,
     updated_at

@@ -6,7 +6,7 @@ option java_multiple_files = true;
 option java_outer_classname = "UserProto";
 option java_package = "example.urlshortner.user.grpc";
 
-enum UserRole{
+enum UserRole {
   USER = 0;
   ADMIN = 1;
 }
@@ -26,9 +26,10 @@ message LoginRequest {
 message LoginResponse {
   bool success = 1;
   bool isUserCreated = 2;
-  string token = 3;
-  string message = 4;
-  optional User user = 5;
+  string accessToken = 3;
+  string refreshToken = 4;
+  string message = 5;
+  optional User user = 6;
 }
 
 message GoogleLoginRequest {
@@ -48,9 +49,10 @@ message User {
   UserRole role = 5;
   optional string google_id = 6;
   AuthProvider auth_provider = 7;
-  bool is_deleted = 8;
-  int64 created_at = 9;
-  int64 updated_at = 10;
+  optional string refresh_token = 8;
+  bool is_deleted = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
 }
 
 message GetUserRequest {
@@ -66,10 +68,20 @@ message DeleteUserResponse {
   bool success = 2;
 }
 
+message RefreshTokenRequest {
+  string refreshToken = 1;
+}
+
+message RefreshTokenResponse {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
 service UserService {
   rpc createUser(CreateUserRequest) returns (User);
   rpc userLogin(LoginRequest) returns (LoginResponse);
   rpc googleLogin(GoogleLoginRequest) returns (LoginResponse);
   rpc getUserById(GetUserRequest) returns (User);
   rpc deleteUserById(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc refreshTokens(RefreshTokenRequest) returns (RefreshTokenResponse);
 }

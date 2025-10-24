@@ -49,16 +49,24 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val email = "test@example.com"
       val password = "secret"
       val expectedToken = "test.jwt.token"
+      val refreshToken = "test.jwt.refresh"
       val loginResponse =
-        LoginResponse(success = true, message = "OK", token = expectedToken, user = None)
+        LoginResponse(
+          success = true,
+          message = "OK",
+          accessToken = expectedToken,
+          refreshToken = refreshToken,
+          user = None
+        )
 
       when(mockUserServiceClient.userLogin(any[LoginRequest]()))
         .thenReturn(Future.successful(loginResponse))
 
       val futureResult = authService.login(email, password)
 
-      whenReady(futureResult) { token =>
-        token mustBe expectedToken
+      whenReady(futureResult) { case (access, refresh) =>
+        access mustBe expectedToken
+        refresh mustBe refreshToken
         verify(mockUserServiceClient).userLogin(any[LoginRequest]())
       }
     }
@@ -68,7 +76,13 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val password = "incorrect"
       val errorMessage = "Invalid credentials"
       val loginResponse =
-        LoginResponse(success = false, message = errorMessage, token = "", user = None)
+        LoginResponse(
+          success = false,
+          message = errorMessage,
+          accessToken = "",
+          refreshToken = "",
+          user = None
+        )
 
       when(mockUserServiceClient.userLogin(any[LoginRequest]()))
         .thenReturn(Future.successful(loginResponse))
@@ -115,7 +129,8 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val loginResponse = LoginResponse(
         success = true,
         message = "User successfully created via Google",
-        token = "jwt.token.here",
+        accessToken = "jwt.token.access",
+        refreshToken = "jwt.token.refresh",
         user = Some(user),
         isUserCreated = true
       )
@@ -140,7 +155,8 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val loginResponse = LoginResponse(
         success = true,
         message = "Login Success",
-        token = "jwt.token.123",
+        accessToken = "jwt.token.access",
+        refreshToken = "jwt.token.refresh",
         user = None,
         isUserCreated = false
       )
@@ -152,7 +168,8 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
 
       whenReady(futureResult) { json =>
         (json \ "success").as[Boolean] mustBe true
-        (json \ "token").as[String] mustBe "jwt.token.123"
+        (json \ "accessToken").as[String] mustBe "jwt.token.access"
+        (json \ "refreshToken").as[String] mustBe "jwt.token.refresh"
         (json \ "user").asOpt[JsObject] mustBe None
       }
     }
@@ -167,6 +184,7 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
         role = UserRole.USER,
         googleId = Some("some_id"),
         authProvider = AuthProvider.GOOGLE,
+        refreshToken = None,
         isDeleted = false,
         createdAt = System.currentTimeMillis(),
         updatedAt = System.currentTimeMillis()
@@ -174,7 +192,8 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val loginResponse = LoginResponse(
         success = true,
         message = "Login again",
-        token = "existing.token.jwt",
+        accessToken = "existing.token.access",
+        refreshToken = "existing.token.refresh",
         user = Some(user),
         isUserCreated = false
       )
@@ -185,7 +204,8 @@ class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
       val futureResult = authService.googleLogin(idToken)
       whenReady(futureResult) { json =>
         (json \ "success").as[Boolean] mustBe true
-        (json \ "token").as[String] mustBe "existing.token.jwt"
+        (json \ "accessToken").as[String] mustBe "existing.token.access"
+        (json \ "refreshToken").as[String] mustBe "existing.token.refresh"
         verify(mockUserServiceClient).googleLogin(any[GoogleLoginRequest]())
       }
     }

@@ -13,6 +13,8 @@ import java.sql.Timestamp
 import java.time.Instant
 import com.google.protobuf.{Timestamp => ProtoTimestamp}
 import security.JwtUtility
+import scala.util.Failure
+import scala.util.Success
 
 class UserRouter @Inject() (
     mat: Materializer,
@@ -55,6 +57,7 @@ class UserRouter @Inject() (
         role = userRole,
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -133,16 +136,28 @@ class UserRouter @Inject() (
           }
           // Valid user - return JWT token
           else {
-            val jwtToken = jwtUtility.createToken(user.email, user.role)
-            Future.successful(
-              LoginResponse(
-                success = true,
-                isUserCreated = false,
-                token = jwtToken,
-                message = "Login was Successfull",
-                user = Some(mapToProtoUser(user))
-              )
-            )
+            val accessToken = jwtUtility.createToken(user.email, user.role)
+            val refreshToken = jwtUtility.createRefreshToken(user.email, user.role)
+
+            userRepo.updateRefreshToken(user.id, refreshToken) flatMap { rowsAffected =>
+              if (rowsAffected <= 0)
+                Future.failed(
+                  new GrpcServiceException(status =
+                    Status.UNKNOWN.withDescription("Unable to login")
+                  )
+                )
+              else
+                Future.successful(
+                  LoginResponse(
+                    success = true,
+                    isUserCreated = false,
+                    accessToken = accessToken,
+                    refreshToken = refreshToken,
+                    message = "Login was Successfull",
+                    user = Some(mapToProtoUser(user))
+                  )
+                )
+            }
           }
 
         case None =>
@@ -191,16 +206,30 @@ class UserRouter @Inject() (
                 }
                 // Existing active Google user
                 else {
-                  val jwtToken = jwtUtility.createToken(existingUser.email, existingUser.role)
-                  Future.successful(
-                    LoginResponse(
-                      success = true,
-                      isUserCreated = false,
-                      token = jwtToken,
-                      message = "Login successful",
-                      user = Some(mapToProtoUser(existingUser))
-                    )
-                  )
+                  val accessToken = jwtUtility.createToken(existingUser.email, existingUser.role)
+                  val refreshToken =
+                    jwtUtility.createRefreshToken(existingUser.email, existingUser.role)
+
+                  userRepo.updateRefreshToken(existingUser.id, refreshToken) flatMap {
+                    rowsAffected =>
+                      if (rowsAffected <= 0)
+                        Future.failed(
+                          new GrpcServiceException(status =
+                            Status.UNKNOWN.withDescription("Unable to login")
+                          )
+                        )
+                      else
+                        Future.successful(
+                          LoginResponse(
+                            success = true,
+                            isUserCreated = false,
+                            accessToken = accessToken,
+                            refreshToken = refreshToken,
+                            message = "Login was Successfull",
+                            user = Some(mapToProtoUser(existingUser))
+                          )
+                        )
+                  }
                 }
 
               case None =>
@@ -213,6 +242,7 @@ class UserRouter @Inject() (
                   role = "USER",
                   google_id = Some(googleUserInfo.googleId),
                   auth_provider = "GOOGLE",
+                  refresh_token = None,
                   is_deleted = false,
                   created_at = Timestamp.from(Instant.now()),
                   updated_at = Timestamp.from(Instant.now())
@@ -221,11 +251,13 @@ class UserRouter @Inject() (
                 userRepo
                   .addUser(newUser)
                   .map { userId =>
-                    val jwtToken = jwtUtility.createToken(newUser.email, newUser.role)
+                    val accessToken = jwtUtility.createToken(newUser.email, newUser.role)
+                    val refreshToken = jwtUtility.createRefreshToken(newUser.email, newUser.role)
                     LoginResponse(
                       success = true,
                       isUserCreated = true,
-                      token = jwtToken,
+                      accessToken = accessToken,
+                      refreshToken = refreshToken,
                       message = "Account created and login successful",
                       user = Some(mapToProtoUser(newUser.copy(id = userId)))
                     )
@@ -346,6 +378,53 @@ class UserRouter @Inject() (
           )
         }
       }
+    }
+  }
+
+  def refreshTokens(in: RefreshTokenRequest): Future[RefreshTokenResponse] = {
+    jwtUtility.decodeRefreshToken(in.refreshToken) match {
+      case Failure(_) =>
+        Future.failed(
+          new GrpcServiceException(Status.UNAUTHENTICATED.withDescription("Invalid refresh token"))
+        )
+      case Success(claim) =>
+        jwtUtility.getRefreshClaimsData(claim) match {
+          case Some((email, role)) =>
+            userRepo.findUserByEmail(email) flatMap {
+              case Some(user) =>
+                userRepo.getRefreshToken(user.id) flatMap {
+                  case Some(token) if (in.refreshToken == token) => {
+                    val newAccessToken = jwtUtility.createToken(user.email, user.role)
+                    val newRefreshToken = jwtUtility.createRefreshToken(user.email, user.role)
+
+                    userRepo.updateRefreshToken(user.id, newRefreshToken) map { _ =>
+                      RefreshTokenResponse(
+                        accessToken = newAccessToken,
+                        refreshToken = newRefreshToken
+                      )
+                    }
+                  }
+                  case _ =>
+                    Future.failed(
+                      new GrpcServiceException(
+                        Status.UNAUTHENTICATED.withDescription("Invalid Refresh Token")
+                      )
+                    )
+                }
+              case None =>
+                Future.failed(
+                  new GrpcServiceException(
+                    Status.UNAUTHENTICATED.withDescription("Unable to find the user")
+                  )
+                )
+            }
+          case None =>
+            Future.failed(
+              new GrpcServiceException(
+                Status.UNAUTHENTICATED.withDescription("Invalid refresh token claims")
+              )
+            )
+        }
     }
   }
 

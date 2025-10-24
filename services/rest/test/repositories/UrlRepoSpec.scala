@@ -54,6 +54,7 @@ class UrlRepoSpec
       role = "USER",
       google_id = None,
       auth_provider = "LOCAL",
+      refresh_token = None,
       is_deleted = false,
       created_at = Timestamp.from(Instant.now()),
       updated_at = Timestamp.from(Instant.now())

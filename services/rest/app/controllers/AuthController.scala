@@ -8,6 +8,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import io.grpc.StatusRuntimeException
 import io.grpc.{Status => grpcStatus}
+import org.apache.pekko.grpc.GrpcServiceException
 
 @Singleton
 class AuthController @Inject() (
@@ -30,8 +31,15 @@ class AuthController @Inject() (
               )
             )
           case Right(userLoginData) =>
-            (authService.login(userLoginData.email, userLoginData.password) map { token =>
-              Ok(Json.obj(("message", "Login was successfull"), ("token", token)))
+            (authService.login(userLoginData.email, userLoginData.password) map {
+              case (accessToken, refreshToken) =>
+                Ok(
+                  Json.obj(
+                    ("message", "Login was successfull"),
+                    ("accessToken", accessToken),
+                    ("refreshToken", refreshToken)
+                  )
+                )
             }).recover {
               case ex: StatusRuntimeException
                   if ex.getStatus.getCode == grpcStatus.Code.PERMISSION_DENIED =>
@@ -120,6 +128,34 @@ class AuthController @Inject() (
       case None =>
         Future.successful(
           BadRequest(Json.obj(("message", "Expecting JSON Body with idToken field")))
+        )
+    }
+  }
+
+  def refreshTokens(): Action[AnyContent] = Action.async { implicit req: Request[AnyContent] =>
+    req.headers.get("Authorization") match {
+      case Some(authHeader) if authHeader.startsWith("Bearer ") =>
+        {
+          val refreshToken = authHeader.substring("Bearer ".length).trim
+          authService.refreshTokens(refreshToken).map { case (accessToken, refreshToken) =>
+            Ok(
+              Json.obj(
+                ("message", "Tokens refreshed successfully."),
+                ("accessToken", accessToken),
+                ("refreshToken", refreshToken)
+              )
+            )
+          }
+        }.recover {
+          case e: GrpcServiceException =>
+            Unauthorized(
+              Json.obj(("message", "Unable to authorize"), ("error", e.getStatus.getDescription))
+            )
+          case _ => InternalServerError((Json.obj(("error", "unable to refresh tokens"))))
+        }
+      case _ =>
+        Future.successful(
+          BadRequest(Json.obj(("error", "Missing or invalid Authorization Header")))
         )
     }
   }

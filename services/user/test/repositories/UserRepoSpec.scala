@@ -73,6 +73,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -101,6 +102,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -114,6 +116,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -127,6 +130,7 @@ class UserRepoSpec
         role = "ADMIN",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -157,6 +161,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -197,6 +202,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -224,6 +230,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -254,6 +261,7 @@ class UserRepoSpec
         role = "USER",
         google_id = Some("google_12345"),
         auth_provider = "GOOGLE",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -278,6 +286,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -311,6 +320,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -337,6 +347,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -363,6 +374,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -389,6 +401,7 @@ class UserRepoSpec
         role = "USER",
         google_id = Some("google_67890"),
         auth_provider = "GOOGLE",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())
@@ -417,6 +430,7 @@ class UserRepoSpec
         role = "USER",
         google_id = None,
         auth_provider = "LOCAL",
+        refresh_token = None,
         is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now())

@@ -29,6 +29,20 @@ class UserRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
         .update(true)
     )
 
+  def getRefreshToken(id: Long): Future[Option[String]] = {
+    dbConfig.db
+      .run(
+        users.filter(_.id === id).map(_.refresh_token).result.headOption
+      )
+      .map(_.flatten)
+  }
+
+  def updateRefreshToken(id: Long, refreshToken: String): Future[Int] = {
+    dbConfig.db.run(
+      users.filter(_.id === id).map(_.refresh_token).update(Some(refreshToken))
+    )
+  }
+
   def addUser(user: User): Future[Long] = {
     val userToAdd = user.password match {
       case Some(password) if !password.startsWith("$2") =>

@@ -58,6 +58,7 @@ class UserRouterSpec
     role = "USER",
     google_id = None,
     auth_provider = "LOCAL",
+    refresh_token = None,
     is_deleted = false,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now())
@@ -201,15 +202,22 @@ class UserRouterSpec
       when(mockUserRepo.authenticate(request.email, request.password))
         .thenReturn(Future.successful(Some(sampleUser)))
 
+      when(mockUserRepo.updateRefreshToken(any[Long](), any[String]()))
+        .thenReturn(Future.successful(1))
+
       when(mockJwtUtility.createToken(sampleUser.email, sampleUser.role))
-        .thenReturn("jwt_token_123")
+        .thenReturn("access_token_123")
+
+      when(mockJwtUtility.createRefreshToken(sampleUser.email, sampleUser.role))
+        .thenReturn("refresh_token_123")
 
       val result = router.userLogin(request)
 
       whenReady(result) { response =>
         response.success shouldBe true
         response.isUserCreated shouldBe false
-        response.token shouldBe "jwt_token_123"
+        response.accessToken shouldBe "access_token_123"
+        response.refreshToken shouldBe "refresh_token_123"
         response.message should include("Login was Successfull")
         response.user should not be empty
         response.user.get.email shouldBe sampleUser.email
@@ -343,16 +351,21 @@ class UserRouterSpec
       when(mockUserRepo.findUserByEmail(googleUserInfo.email))
         .thenReturn(Future.successful(Some(googleUser)))
 
+      when(mockUserRepo.updateRefreshToken(any[Long](), any[String]()))
+        .thenReturn(Future.successful(1))
+
       when(mockJwtUtility.createToken(googleUser.email, googleUser.role))
-        .thenReturn("jwt_token_456")
+        .thenReturn("access_token_123")
+
+      when(mockJwtUtility.createRefreshToken(googleUser.email, googleUser.role))
+        .thenReturn("refresh_token_123")
 
       val result = router.googleLogin(request)
-
       whenReady(result) { response =>
         response.success shouldBe true
         response.isUserCreated shouldBe false
-        response.token shouldBe "jwt_token_456"
-        response.message should include("Login successful")
+        response.accessToken shouldBe "access_token_123"
+        response.refreshToken shouldBe "refresh_token_123"
         verify(mockGoogleAuthService).verifyToken(request.idToken)
         verify(mockUserRepo).findUserByEmail(googleUserInfo.email)
       }
@@ -383,7 +396,7 @@ class UserRouterSpec
       whenReady(result) { response =>
         response.success shouldBe true
         response.isUserCreated shouldBe true
-        response.token shouldBe "jwt_token_789"
+        response.accessToken shouldBe "jwt_token_789"
         response.message should include("Account created and login successful")
         verify(mockUserRepo).addUser(any[User])
       }

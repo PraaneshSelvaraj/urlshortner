@@ -53,6 +53,7 @@ class UserService @Inject() (
         role = createdUser.role.toString(),
         google_id = createdUser.googleId,
         auth_provider = createdUser.authProvider.toString(),
+        refresh_token = createdUser.refreshToken,
         is_deleted = createdUser.isDeleted,
         created_at = new Timestamp(createdUser.createdAt),
         updated_at = new Timestamp(createdUser.updatedAt)
@@ -75,6 +76,7 @@ class UserService @Inject() (
         role = user.role.toString(),
         google_id = user.googleId,
         auth_provider = user.authProvider.toString(),
+        refresh_token = user.refreshToken,
         is_deleted = user.isDeleted,
         created_at = new Timestamp(user.createdAt),
         updated_at = new Timestamp(user.updatedAt)
