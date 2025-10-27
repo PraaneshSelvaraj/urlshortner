@@ -17,6 +17,7 @@ import example.urlshortner.notification.grpc.{
   NotificationType
 }
 import com.google.protobuf.empty.Empty
+import com.typesafe.config.ConfigFactory
 import exceptions.TresholdReachedException
 import org.scalatest.time.{Seconds, Span, Milliseconds}
 import java.sql.Timestamp
@@ -30,9 +31,15 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
   val mockUrlRepo: UrlRepo = mock[UrlRepo]
   val mockNotificationServiceClient: NotificationServiceClient = mock[NotificationServiceClient]
-  val mockConfig: Configuration = mock[Configuration]
+  val testConfig: Configuration = Configuration(
+    ConfigFactory.parseString("""
+      bannedHosts = []
+      urlExpirationHours = 24
+      notification.treshold = 5
+    """)
+  )
 
-  val urlService = new UrlService(mockUrlRepo, mockNotificationServiceClient, mockConfig)
+  val urlService = new UrlService(mockUrlRepo, mockNotificationServiceClient, testConfig)
 
   val sampleUrlDto = UrlDto("https://www.example.com")
   val sampleUrl = Url(
@@ -53,7 +60,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockUrlRepo, mockNotificationServiceClient, mockConfig)
+    reset(mockUrlRepo, mockNotificationServiceClient)
   }
 
   "UrlService" should {
@@ -75,11 +82,9 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     }
 
     "redirect and send notification" in {
-      val treshold = 5
       when(mockUrlRepo.getUrlByShortcode(any[String]()))
         .thenReturn(Future.successful(Some(sampleUrl)))
       when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(1))
-      when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
       when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(
         Future.successful(NotificationReply(success = true, message = "Notification sent"))
       )
@@ -98,7 +103,6 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
       when(mockUrlRepo.getUrlByShortcode(any[String]()))
         .thenReturn(Future.successful(Some(sampleUrl)))
       when(mockUrlRepo.incrementUrlCount(any[String]())).thenReturn(Future.successful(treshold + 1))
-      when(mockConfig.get[Int]("notification.treshold")).thenReturn(treshold)
       when(mockNotificationServiceClient.notifyMethod(any[NotificationRequest]())).thenReturn(
         Future.successful(NotificationReply(success = true, message = "Notification sent"))
       )

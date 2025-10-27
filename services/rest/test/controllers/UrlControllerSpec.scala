@@ -173,7 +173,7 @@ class UrlControllerSpec
       val result: Future[Result] = controller.addUrl()(request)
 
       status(result) mustBe INTERNAL_SERVER_ERROR
-      (contentAsJson(result) \ "message").as[String] mustBe "Failed to create URL"
+      (contentAsJson(result) \ "error").as[String] mustBe "Failed to create URL"
     }
   }
 
@@ -202,7 +202,7 @@ class UrlControllerSpec
       val result: Future[Result] = controller.redirectUrl("unknown")(request)
 
       status(result) mustBe NOT_FOUND
-      (contentAsJson(result) \ "message").as[String] must include(
+      (contentAsJson(result) \ "error").as[String] must include(
         "URL with short code 'unknown' not found"
       )
     }
@@ -218,7 +218,7 @@ class UrlControllerSpec
 
       status(result) mustBe FORBIDDEN
       (contentAsJson(result) \ "success").as[Boolean] mustBe false
-      (contentAsJson(result) \ "message").as[String] must include("Treshold reached")
+      (contentAsJson(result) \ "error").as[String] must include("Treshold reached")
     }
 
     "return 403 when URL expired" in {
@@ -231,7 +231,7 @@ class UrlControllerSpec
       val result: Future[Result] = controller.redirectUrl("abc123")(request)
 
       status(result) mustBe FORBIDDEN
-      (contentAsJson(result) \ "message").as[String] must include("Url Expired")
+      (contentAsJson(result) \ "error").as[String] must include("Url Expired")
     }
 
     "return 429 when rate limit exceeded" in {
@@ -255,7 +255,7 @@ class UrlControllerSpec
       val result: Future[Result] = controller.redirectUrl("abc123")(request)
 
       status(result) mustBe INTERNAL_SERVER_ERROR
-      (contentAsJson(result) \ "message").as[String] mustBe "Error processing redirect"
+      (contentAsJson(result) \ "error").as[String] mustBe "Error processing redirect"
     }
   }
 

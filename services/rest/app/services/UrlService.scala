@@ -11,7 +11,7 @@ import example.urlshortner.notification.grpc.{
   NotificationType
 }
 import com.google.protobuf.empty.Empty
-import exceptions.{TresholdReachedException, UrlExpiredException}
+import exceptions.{TresholdReachedException, UrlExpiredException, InvalidUrlException}
 import java.time.{Instant, Duration}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,40 +24,44 @@ class UrlService @Inject() (
 )(implicit ec: ExecutionContext) {
 
   def addUrl(urlData: UrlDto, userId: Long): Future[Url] = {
-    for {
-      code <- generateShortCode()
-      currentTime = new java.sql.Timestamp(System.currentTimeMillis())
-      urlExpirationHours = config.get[Int]("urlExpirationHours")
-      expiresAt = new java.sql.Timestamp(
-        currentTime.toInstant.plus(Duration.ofHours(urlExpirationHours)).toEpochMilli
-      )
-      urlAdded <- {
-        val newUrl = Url(
-          id = 0L,
-          user_id = userId,
-          short_code = code,
-          long_url = urlData.url,
-          clicks = 0,
-          created_at = currentTime,
-          updated_at = currentTime,
-          expires_at = expiresAt
+    if (!isValidUrl(urlData.url)) {
+      Future.failed(new InvalidUrlException)
+    } else {
+      for {
+        code <- generateShortCode()
+        currentTime = new java.sql.Timestamp(System.currentTimeMillis())
+        urlExpirationHours = config.get[Int]("urlExpirationHours")
+        expiresAt = new java.sql.Timestamp(
+          currentTime.toInstant.plus(Duration.ofHours(urlExpirationHours)).toEpochMilli
         )
-        urlRepo.addUrl(newUrl)
-      }
-      _ <- {
-        val notification = NotificationRequest(
-          notificationType = NotificationType.NEWURL,
-          message = s"URL Created for ${urlAdded.long_url}",
-          shortCode = Some(urlAdded.short_code)
-        )
-        val reply = notificationServiceClient.notifyMethod(notification)
-        reply.map(r =>
-          println(
-            s"Notification Success: ${r.success}, Notification Status: ${r.notificationStatus}  Notification Message: ${r.message}"
+        urlAdded <- {
+          val newUrl = Url(
+            id = 0L,
+            user_id = userId,
+            short_code = code,
+            long_url = urlData.url,
+            clicks = 0,
+            created_at = currentTime,
+            updated_at = currentTime,
+            expires_at = expiresAt
           )
-        )
-      }
-    } yield urlAdded
+          urlRepo.addUrl(newUrl)
+        }
+        _ <- {
+          val notification = NotificationRequest(
+            notificationType = NotificationType.NEWURL,
+            message = s"URL Created for ${urlAdded.long_url}",
+            shortCode = Some(urlAdded.short_code)
+          )
+          val reply = notificationServiceClient.notifyMethod(notification)
+          reply.map(r =>
+            println(
+              s"Notification Success: ${r.success}, Notification Status: ${r.notificationStatus}  Notification Message: ${r.message}"
+            )
+          )
+        }
+      } yield urlAdded
+    }
   }
 
   def redirect(shortCode: String): Future[Url] = {
@@ -128,6 +132,18 @@ class UrlService @Inject() (
     }
   }
 
+  def isValidUrl(url: String): Boolean = {
+    val bannedHosts: Set[String] = config.get[Seq[String]]("bannedHosts").toSet
+    try {
+      val uri = new java.net.URI(url)
+      val host = uri.getHost
+
+      host != null && !bannedHosts.contains(host)
+    } catch {
+      case _: Exception => false
+    }
+  }
+
   private def getRandomString(length: Int): String = {
     Iterator
       .continually(Random.nextPrintableChar())
@@ -138,7 +154,6 @@ class UrlService @Inject() (
 
   private def generateShortCode(length: Int = 7): Future[String] = {
     val code = getRandomString(length)
-
     urlRepo.getUrlByShortcode(code).flatMap {
       case None    => Future.successful(code)
       case Some(_) => generateShortCode()

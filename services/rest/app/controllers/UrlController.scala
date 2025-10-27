@@ -2,14 +2,13 @@ package controllers
 
 import actions.RateLimiterAction
 import dtos.UrlDto
-import exceptions.TresholdReachedException
+import exceptions.{TresholdReachedException, InvalidUrlException, UrlExpiredException}
 import play.api.libs.json.Json
 import play.api.mvc._
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import services.UrlService
-import exceptions.UrlExpiredException
 import auth.{AuthenticatedAction, AuthenticatedRequest}
 
 class UrlController @Inject() (
@@ -33,9 +32,14 @@ class UrlController @Inject() (
                 .map { urlAdded =>
                   Created(Json.obj(("message", "Url Created successfully"), ("data", urlAdded)))
                 }
-                .recover { case ex: Exception =>
-                  println(s"Error creating URL: ${ex.getMessage}")
-                  InternalServerError(Json.obj(("message", "Failed to create URL")))
+                .recover {
+                  case ex: InvalidUrlException =>
+                    Forbidden(
+                      Json.obj(("error", ex.getMessage))
+                    )
+                  case ex: Exception =>
+                    println(s"Error creating URL: ${ex.getMessage}")
+                    InternalServerError(Json.obj(("error", "Failed to create URL")))
                 }
             case None =>
               Future.successful(BadRequest(Json.obj(("message", "Invalid Request Body Schema"))))
@@ -54,26 +58,26 @@ class UrlController @Inject() (
       .recover {
         case _: NoSuchElementException =>
           NotFound(
-            Json.obj("success" -> false, "message" -> s"URL with short code '$shortCode' not found")
+            Json.obj("success" -> false, "error" -> s"URL with short code '$shortCode' not found")
           )
         case _: TresholdReachedException =>
           Forbidden(
             Json.obj(
               ("success", false),
-              "message" -> s"Treshold reached for the url with short code $shortCode"
+              ("error", s"Treshold reached for the url with short code $shortCode")
             )
           )
         case _: UrlExpiredException =>
           Forbidden(
             Json.obj(
               ("success", false),
-              "message" -> s"Url Expired for the url with short code $shortCode"
+              ("error", s"Url Expired for the url with short code $shortCode")
             )
           )
         case ex: Exception =>
           println(s"Error redirecting URL: ${ex.getMessage}")
           InternalServerError(
-            Json.obj("success" -> false, "message" -> "Error processing redirect")
+            Json.obj("success" -> false, "error" -> "Error processing redirect")
           )
       }
   }
