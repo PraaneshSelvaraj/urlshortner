@@ -9,6 +9,7 @@ import java.sql.Timestamp
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
+import org.mindrot.jbcrypt.BCrypt
 
 class UserService @Inject() (
     userServiceClient: UserServiceClient,
@@ -16,7 +17,41 @@ class UserService @Inject() (
     config: Configuration
 )(implicit ec: ExecutionContext) {
 
-  def addUser(userDTO: CreateUserDTO): Future[UserModel] = {
+  private val emailRegex = """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$""".r
+  private val usernameRegex = """^[a-zA-Z][a-zA-Z0-9]*$""".r
+  private val passwordRegex =
+    """^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$""".r
+
+  def addUser(userDTO: CreateUserDTO, isOauthUser: Boolean = false): Future[UserModel] = {
+    if (userDTO.username.length < 3) {
+      return Future.failed(
+        new IllegalArgumentException("Username must be at least 3 characters long")
+      )
+    }
+    if (!usernameRegex.matches(userDTO.username)) {
+      return Future.failed(
+        new IllegalArgumentException(
+          "Username must start with a letter and contain only alphanumeric characters"
+        )
+      )
+    }
+
+    if (!emailRegex.matches(userDTO.email)) {
+      return Future.failed(new IllegalArgumentException("Invalid email format"))
+    }
+
+    if (!isOauthUser && userDTO.password.length < 8) {
+      return Future.failed(
+        new IllegalArgumentException("Password must be at least 8 characters long")
+      )
+    }
+    if (!isOauthUser && !passwordRegex.matches(userDTO.password)) {
+      return Future.failed(
+        new IllegalArgumentException(
+          "Password must contain at least one letter, one number, and one special character"
+        )
+      )
+    }
 
     val userRole = userDTO.role match {
       case Some(role) if role == "ADMIN" => UserRole.ADMIN
@@ -25,7 +60,7 @@ class UserService @Inject() (
     val createUser = CreateUserRequest(
       username = userDTO.username,
       email = userDTO.email,
-      password = userDTO.password,
+      password = BCrypt.hashpw(userDTO.password, BCrypt.gensalt()),
       userRole = Some(userRole)
     )
 

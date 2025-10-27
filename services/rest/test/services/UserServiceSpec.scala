@@ -171,7 +171,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
           )
         )
 
-      val result = userService.addUser(googleUser)
+      val result = userService.addUser(googleUser, true)
 
       whenReady(result) { userAdded =>
         userAdded.email mustBe "google@example.com"

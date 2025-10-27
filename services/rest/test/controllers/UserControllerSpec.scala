@@ -85,7 +85,7 @@ class UserControllerSpec
         role = Some("USER")
       )
 
-      when(mockUserService.addUser(any[CreateUserDTO]()))
+      when(mockUserService.addUser(any[CreateUserDTO](), any[Boolean]()))
         .thenReturn(Future.successful(sampleUser))
 
       val request = FakeRequest(POST, "/user")
@@ -102,7 +102,7 @@ class UserControllerSpec
 
       status(result) mustBe OK
       contentAsJson(result).\("message").as[String] mustBe "User Created"
-      verify(mockUserService).addUser(any[CreateUserDTO]())
+      verify(mockUserService).addUser(any[CreateUserDTO](), any[Boolean]())
     }
 
     "return 400 when request body is not JSON" in {
@@ -131,7 +131,7 @@ class UserControllerSpec
     }
 
     "return 409 when username or email already exists" in {
-      when(mockUserService.addUser(any[CreateUserDTO]()))
+      when(mockUserService.addUser(any[CreateUserDTO](), any[Boolean]()))
         .thenReturn(
           Future.failed(
             new StatusRuntimeException(Status.ALREADY_EXISTS)
@@ -155,7 +155,7 @@ class UserControllerSpec
     }
 
     "return 500 when gRPC error occurs" in {
-      when(mockUserService.addUser(any[CreateUserDTO]()))
+      when(mockUserService.addUser(any[CreateUserDTO](), any[Boolean]()))
         .thenReturn(
           Future.failed(
             new StatusRuntimeException(Status.INTERNAL)
@@ -179,7 +179,7 @@ class UserControllerSpec
     }
 
     "return 500 when generic exception occurs" in {
-      when(mockUserService.addUser(any[CreateUserDTO]()))
+      when(mockUserService.addUser(any[CreateUserDTO](), any[Boolean]()))
         .thenReturn(Future.failed(new Exception("Database error")))
 
       val request = FakeRequest(POST, "/user")

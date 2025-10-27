@@ -10,7 +10,6 @@ import services.UserService
 import java.sql.SQLException
 import io.grpc.StatusRuntimeException
 import io.grpc.{Status => grpcStatus}
-import org.mindrot.jbcrypt.BCrypt
 import auth.AuthenticatedAction
 import auth.AuthenticatedRequest
 
@@ -27,7 +26,7 @@ class UserController @Inject() (
         jsonData.validate[CreateUserDTO].asOpt match {
           case Some(userData) =>
             userService
-              .addUser(userData.copy(password = BCrypt.hashpw(userData.password, BCrypt.gensalt())))
+              .addUser(userData)
               .map(userCreated => Ok(Json.obj(("message", "User Created"), ("data", userCreated))))
               .recover {
                 case e: StatusRuntimeException
