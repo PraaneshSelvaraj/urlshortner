@@ -25,6 +25,7 @@ import dtos.CreateUserDTO
 import io.grpc.StatusRuntimeException
 import io.grpc.Status
 import org.scalatest.BeforeAndAfterEach
+import dtos.UserDto
 
 class UserControllerSpec
     extends PlaySpec
@@ -70,6 +71,19 @@ class UserControllerSpec
     updated_at = Timestamp.from(Instant.now())
   )
 
+  val sampleUserDto = UserDto(
+    id = 1L,
+    username = "testuser",
+    email = "test@example.com",
+    role = "USER",
+    google_id = None,
+    auth_provider = "LOCAL",
+    refresh_token = None,
+    is_deleted = false,
+    created_at = Timestamp.from(Instant.now()),
+    updated_at = Timestamp.from(Instant.now())
+  )
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockUserService)
@@ -86,7 +100,7 @@ class UserControllerSpec
       )
 
       when(mockUserService.addUser(any[CreateUserDTO](), any[Boolean]()))
-        .thenReturn(Future.successful(sampleUser))
+        .thenReturn(Future.successful(sampleUserDto))
 
       val request = FakeRequest(POST, "/user")
         .withHeaders("Content-Type" -> "application/json")
@@ -100,7 +114,7 @@ class UserControllerSpec
 
       val result: Future[Result] = controller.addUser().apply(request)
 
-      status(result) mustBe OK
+      status(result) mustBe CREATED
       contentAsJson(result).\("message").as[String] mustBe "User Created"
       verify(mockUserService).addUser(any[CreateUserDTO](), any[Boolean]())
     }
@@ -203,7 +217,7 @@ class UserControllerSpec
 
     "return user when user exists" in {
       when(mockUserService.getUserById(1L))
-        .thenReturn(Future.successful(sampleUser))
+        .thenReturn(Future.successful(sampleUserDto))
 
       val request = FakeRequest(GET, "/user/1")
         .withHeaders("Authorization" -> "Bearer valid_token")

@@ -46,16 +46,24 @@ import pdi.jwt.exceptions.{JwtExpirationException, JwtValidationException}
               jwtUtility.getClaimsData(claims) match {
                 case Some((email, role)) =>
                   userRepo.findUserByEmail(email) flatMap {
-                    case Some(user) if allowedRoles.contains(user.role) =>
-                      block(AuthenticatedRequest(user, request))
                     case Some(user) =>
-                      Future.successful(
-                        Forbidden(
-                          Json.obj(
-                            "message" -> s"Access denied: User role '${user.role}' is not authorized"
+                      if (user.is_deleted) {
+                        Future.successful(
+                          Forbidden(
+                            Json.obj("message" -> "Invalid token: User not found or deactivated")
                           )
                         )
-                      )
+                      } else if (allowedRoles.contains(user.role)) {
+                        block(AuthenticatedRequest(user, request))
+                      } else {
+                        Future.successful(
+                          Forbidden(
+                            Json.obj(
+                              "message" -> s"Access denied: User role '${user.role}' is not authorized"
+                            )
+                          )
+                        )
+                      }
                     case None =>
                       Future.successful(
                         Unauthorized(

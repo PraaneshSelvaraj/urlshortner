@@ -27,7 +27,9 @@ class UserController @Inject() (
           case Some(userData) =>
             userService
               .addUser(userData)
-              .map(userCreated => Ok(Json.obj(("message", "User Created"), ("data", userCreated))))
+              .map(userCreated =>
+                Created(Json.obj(("message", "User Created"), ("data", userCreated)))
+              )
               .recover {
                 case e: StatusRuntimeException
                     if e.getStatus.getCode == grpcStatus.Code.ALREADY_EXISTS =>

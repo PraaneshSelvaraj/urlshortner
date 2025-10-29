@@ -1,9 +1,24 @@
 package dtos
 
-import play.api.libs.json.{Json, OFormat}
+import java.sql.Timestamp
+import play.api.libs.json.{Json, OFormat, Reads, Writes}
 
-case class CreateUserDTO(username: String, email: String, password: String, role: Option[String])
+case class UserDto(
+    id: Long,
+    username: String,
+    email: String,
+    role: String,
+    google_id: Option[String],
+    auth_provider: String,
+    refresh_token: Option[String],
+    is_deleted: Boolean,
+    created_at: Timestamp,
+    updated_at: Timestamp
+)
 
-object CreateUserDTO {
-  implicit val createUserDTOFormat: OFormat[CreateUserDTO] = Json.format[CreateUserDTO]
+object UserDto {
+  implicit val timestampReads: Reads[Timestamp] = Reads.of[Long].map(new Timestamp(_))
+  implicit val timestampWrites: Writes[Timestamp] = Writes.of[Long].contramap(_.getTime)
+
+  implicit val userDtoFormat: OFormat[UserDto] = Json.format[UserDto]
 }

@@ -1,6 +1,6 @@
 package services
 
-import dtos.CreateUserDTO
+import dtos.{CreateUserDTO, UserDto}
 import play.api.Configuration
 import example.urlshortner.user.grpc._
 import example.urlshortner.notification.grpc._
@@ -22,7 +22,7 @@ class UserService @Inject() (
   private val passwordRegex =
     """^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$""".r
 
-  def addUser(userDTO: CreateUserDTO, isOauthUser: Boolean = false): Future[UserModel] = {
+  def addUser(userDTO: CreateUserDTO, isOauthUser: Boolean = false): Future[UserDto] = {
     if (userDTO.username.length < 3) {
       return Future.failed(
         new IllegalArgumentException("Username must be at least 3 characters long")
@@ -80,11 +80,10 @@ class UserService @Inject() (
         )
       }
     } yield {
-      UserModel(
+      UserDto(
         id = createdUser.id,
         username = createdUser.username,
         email = createdUser.email,
-        password = createdUser.password,
         role = createdUser.role.toString(),
         google_id = createdUser.googleId,
         auth_provider = createdUser.authProvider.toString(),
@@ -96,18 +95,17 @@ class UserService @Inject() (
     }
   }
 
-  def getUserById(id: Long): Future[UserModel] = {
+  def getUserById(id: Long): Future[UserDto] = {
     val getUserRequest = GetUserRequest(
       id = id
     )
     for {
       user <- userServiceClient.getUserById(getUserRequest)
     } yield {
-      UserModel(
+      UserDto(
         id = user.id,
         username = user.username,
         email = user.email,
-        password = user.password,
         role = user.role.toString(),
         google_id = user.googleId,
         auth_provider = user.authProvider.toString(),
