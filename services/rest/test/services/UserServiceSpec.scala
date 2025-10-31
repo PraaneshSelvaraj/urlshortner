@@ -34,19 +34,21 @@ import models.{User => UserModel}
 import dtos.CreateUserDTO
 import io.grpc.StatusRuntimeException
 import io.grpc.Status
+import repositories.UrlRepo
 
 class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
   private val mockUserRepo: UserRepo = mock[UserRepo]
+  private val mockUrlRepo: UrlRepo = mock[UrlRepo]
   private val mockNotificationServiceClient: NotificationServiceClient =
     mock[NotificationServiceClient]
   private val mockUserServiceClient: UserServiceClient = mock[UserServiceClient]
   private val mockConfig: Configuration = mock[Configuration]
 
   private val userService =
-    new UserService(mockUserServiceClient, mockNotificationServiceClient, mockConfig)
+    new UserService(mockUserServiceClient, mockNotificationServiceClient, mockUrlRepo, mockConfig)
 
   implicit val defaultPatience: PatienceConfig = PatienceConfig(
     timeout = Span(5, Seconds),
@@ -243,6 +245,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
     "successfully delete user" in {
       when(mockUserServiceClient.deleteUserById(any[DeleteUserRequest]()))
         .thenReturn(Future.successful(DeleteUserResponse(id = 1L, success = true)))
+      when(mockUrlRepo.softDeleteUrlsByUserId(any[Long]())).thenReturn(Future.successful(1))
 
       val result = userService.deleteUserById(1L)
 
@@ -255,6 +258,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
     "return false when user not found" in {
       when(mockUserServiceClient.deleteUserById(any[DeleteUserRequest]()))
         .thenReturn(Future.successful(DeleteUserResponse(id = 999L, success = false)))
+      when(mockUrlRepo.softDeleteUrlsByUserId(any[Long]())).thenReturn(Future.successful(0))
 
       val result = userService.deleteUserById(999L)
 
@@ -266,6 +270,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
     "fail when gRPC service throws exception" in {
       when(mockUserServiceClient.deleteUserById(any[DeleteUserRequest]()))
         .thenReturn(Future.failed(new StatusRuntimeException(Status.INTERNAL)))
+      when(mockUrlRepo.softDeleteUrlsByUserId(any[Long]())).thenReturn(Future.successful(0))
 
       val result = userService.deleteUserById(1L)
 
@@ -277,6 +282,7 @@ class UserServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with 
     "fail when user is not found (INVALID_ARGUMENT)" in {
       when(mockUserServiceClient.deleteUserById(any[DeleteUserRequest]()))
         .thenReturn(Future.failed(new StatusRuntimeException(Status.INVALID_ARGUMENT)))
+      when(mockUrlRepo.softDeleteUrlsByUserId(any[Long]())).thenReturn(Future.successful(0))
 
       val result = userService.deleteUserById(999L)
 

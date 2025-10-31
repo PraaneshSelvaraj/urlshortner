@@ -48,6 +48,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     short_code = "abcdefg",
     long_url = "https://www.example.com",
     clicks = 0,
+    is_deleted = false,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now()),
     expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
@@ -123,6 +124,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         short_code = "abcdefg",
         long_url = "https://www.example.com",
         clicks = 0,
+        is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now()),
         expires_at = Timestamp.from(Instant.now().minus(Duration.ofHours(1)))
@@ -165,6 +167,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         short_code = "abcdefg",
         long_url = "https://www.example.com",
         clicks = 0,
+        is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now()),
         expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
@@ -176,6 +179,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         short_code = "test",
         long_url = "https://www.youtube.com",
         clicks = 6,
+        is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now()),
         expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
@@ -187,6 +191,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         short_code = "sample",
         long_url = "https://www.test.com",
         clicks = 2,
+        is_deleted = false,
         created_at = Timestamp.from(Instant.now()),
         updated_at = Timestamp.from(Instant.now()),
         expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))

@@ -41,6 +41,7 @@ class UrlService @Inject() (
             short_code = code,
             long_url = urlData.url,
             clicks = 0,
+            is_deleted = false,
             created_at = currentTime,
             updated_at = currentTime,
             expires_at = expiresAt

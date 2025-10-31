@@ -19,10 +19,12 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
     db.run(urls.result)
 
   def getUrlById(id: Long): Future[Option[Url]] =
-    db.run(urls.filter(_.id === id).result.headOption)
+    db.run(urls.filter(_.id === id).filter(_.is_deleted === false).result.headOption)
 
   def getUrlByShortcode(short_code: String): Future[Option[Url]] =
-    db.run(urls.filter(_.short_code === short_code).result.headOption)
+    db.run(
+      urls.filter(_.short_code === short_code).filter(_.is_deleted === false).result.headOption
+    )
 
   def addUrl(url: Url): Future[Url] =
     db.run(urls returning urls.map(_.id) += url).flatMap { id =>
@@ -31,6 +33,15 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
 
   def deleteUrlByShortCode(shortCode: String): Future[Int] =
     db.run(urls.filter(_.short_code === shortCode).delete)
+
+  def softDeleteUrlsByUserId(userId: Long): Future[Int] =
+    db.run(
+      urls
+        .filter(_.user_id === userId)
+        .filter(_.is_deleted === false)
+        .map(_.is_deleted)
+        .update(true)
+    )
 
   def incrementUrlCount(shortCode: String): Future[Int] = {
     val query = urls.filter(_.short_code === shortCode)

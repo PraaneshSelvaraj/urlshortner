@@ -10,10 +10,12 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import org.mindrot.jbcrypt.BCrypt
+import repositories.UrlRepo
 
 class UserService @Inject() (
     userServiceClient: UserServiceClient,
     notificationServiceClient: NotificationServiceClient,
+    urlRepo: UrlRepo,
     config: Configuration
 )(implicit ec: ExecutionContext) {
 
@@ -124,6 +126,7 @@ class UserService @Inject() (
 
     for {
       reply <- userServiceClient.deleteUserById(deleteUserRequest)
+      urlsDeleted <- urlRepo.softDeleteUrlsByUserId(id)
     } yield reply.success
   }
 }

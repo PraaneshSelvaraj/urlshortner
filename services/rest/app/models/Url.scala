@@ -9,6 +9,7 @@ case class Url(
     short_code: String,
     long_url: String,
     clicks: Int,
+    is_deleted: Boolean,
     created_at: Timestamp,
     updated_at: Timestamp,
     expires_at: Timestamp

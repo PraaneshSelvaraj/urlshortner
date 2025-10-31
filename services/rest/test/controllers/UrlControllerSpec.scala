@@ -91,6 +91,7 @@ class UrlControllerSpec
     short_code = "abc123",
     long_url = "https://example.com",
     clicks = 0,
+    is_deleted = false,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now()),
     expires_at = Timestamp.from(Instant.now().plusSeconds(3600))
@@ -102,6 +103,7 @@ class UrlControllerSpec
     short_code = "abc123",
     long_url = "https://example.com",
     clicks = 0,
+    is_deleted = false,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now()),
     expires_at = Timestamp.from(Instant.now().plusSeconds(3600))
@@ -113,6 +115,7 @@ class UrlControllerSpec
     short_code = "xyz789",
     long_url = "https://other.com",
     clicks = 0,
+    is_deleted = false,
     created_at = Timestamp.from(Instant.now()),
     updated_at = Timestamp.from(Instant.now()),
     expires_at = Timestamp.from(Instant.now().plusSeconds(3600))

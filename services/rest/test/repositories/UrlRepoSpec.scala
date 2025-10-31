@@ -74,6 +74,7 @@ class UrlRepoSpec
         "abc123",
         "https://example.com",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -97,6 +98,7 @@ class UrlRepoSpec
         "xyz789",
         "https://test.com",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -121,6 +123,7 @@ class UrlRepoSpec
         "code1",
         "https://scala-lang.org",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -131,6 +134,7 @@ class UrlRepoSpec
         "code2",
         "https://playframework.com",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -152,6 +156,7 @@ class UrlRepoSpec
         "a49g5a",
         "https://scala-lang.org",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -180,6 +185,7 @@ class UrlRepoSpec
         "eg123",
         "https://example.org",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
@@ -208,6 +214,7 @@ class UrlRepoSpec
         "deleteTest",
         "https://scala-lang.org",
         0,
+        false,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now())
