@@ -58,6 +58,9 @@ class UserRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     dbConfig.db.run(users.filter(_.email === email).result.headOption)
   }
 
+  def logoutUser(userId: Long): Future[Int] =
+    dbConfig.db.run(users.filter(_.id === userId).map(_.refresh_token).update(None))
+
   def authenticate(email: String, password: String): Future[Option[User]] = {
     findUserByEmail(email) map {
       case Some(user) =>

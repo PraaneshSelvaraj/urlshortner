@@ -14,6 +14,8 @@ class JwtUtility @Inject() (configuration: Configuration) {
 
   private val secretKey = configuration.get[String]("jwt.secretKey")
 
+  private val expirationSeconds = configuration.get[Int]("jwt.expirationSeconds")
+
   private val algorithm =
     JwtAlgorithm.fromString(configuration.get[String]("jwt.algorithm")) match {
       case algo: JwtHmacAlgorithm => algo
@@ -33,4 +35,9 @@ class JwtUtility @Inject() (configuration: Configuration) {
     (email, role)
   }.toOption
 
+  def getJtiFromClaim(claim: JwtClaim): Try[String] = {
+    Try {
+      claim.jwtId.getOrElse(throw new Exception("Missing jti"))
+    }
+  }
 }

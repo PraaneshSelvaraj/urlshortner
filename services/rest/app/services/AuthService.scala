@@ -7,11 +7,13 @@ import example.urlshortner.user.grpc.{
   GoogleLoginRequest,
   LoginResponse,
   RefreshTokenRequest,
-  RefreshTokenResponse
+  RefreshTokenResponse,
+  LogoutUserRequest,
+  LogoutUserResponse
 }
 import example.urlshortner.notification.grpc._
 import play.api.libs.json.{Json, JsObject}
-
+import services.RedisService
 import com.google.protobuf.empty.Empty
 import exceptions.{TresholdReachedException, UrlExpiredException}
 import java.time.{Instant, Duration}
@@ -21,7 +23,8 @@ import scala.util.Random
 
 class AuthService @Inject() (
     userServiceClient: UserServiceClient,
-    notificationServiceClient: NotificationServiceClient
+    notificationServiceClient: NotificationServiceClient,
+    redisService: RedisService
 )(implicit ec: ExecutionContext) {
 
   def login(email: String, password: String): Future[(String, String)] = {
@@ -89,6 +92,14 @@ class AuthService @Inject() (
     userServiceClient.refreshTokens(request).map { reply =>
       (reply.accessToken, reply.refreshToken)
     }
+  }
+
+  def logoutUser(userId: Long, jti: String, expiresAt: Long): Future[Boolean] = {
+    val request = LogoutUserRequest(userId = userId)
+    for {
+      reply <- userServiceClient.logoutUser(request)
+      _ <- redisService.blacklistToken(jti, expiresAt)
+    } yield reply.success
   }
 
   def isNewUserCreation(message: String): Boolean = {

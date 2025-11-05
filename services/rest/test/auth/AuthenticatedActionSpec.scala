@@ -13,6 +13,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.UserRepo
 import security.JwtUtility
+import services.RedisService
 import models.User
 import pdi.jwt.{JwtClaim, JwtAlgorithm}
 import pdi.jwt.exceptions.{JwtExpirationException, JwtValidationException}
@@ -35,13 +36,15 @@ class AuthenticatedActionSpec
   val stubControllerComponents: ControllerComponents = Helpers.stubControllerComponents()
   val mockJwtUtility: JwtUtility = mock[JwtUtility]
   val mockUserRepo: UserRepo = mock[UserRepo]
+  val mockRedisService: RedisService = mock[RedisService]
 
   val defaultBodyParser = new BodyParsers.Default(stubControllerComponents.parsers)
 
   val authenticatedAction = new AuthenticatedAction(
     defaultBodyParser,
     mockJwtUtility,
-    mockUserRepo
+    mockUserRepo,
+    mockRedisService
   )
 
   val sampleUser = User(
@@ -82,7 +85,7 @@ class AuthenticatedActionSpec
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    reset(mockJwtUtility, mockUserRepo)
+    reset(mockJwtUtility, mockUserRepo, mockRedisService)
   }
 
   "AuthenticatedAction#forUser" should {
@@ -94,6 +97,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(Some(sampleUser)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_user_token")
@@ -117,6 +124,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("admin@example.com", "ADMIN")))
       when(mockUserRepo.findUserByEmail("admin@example.com"))
         .thenReturn(Future.successful(Some(sampleAdmin)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_admin_token")
@@ -142,6 +153,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("admin@example.com", "ADMIN")))
       when(mockUserRepo.findUserByEmail("admin@example.com"))
         .thenReturn(Future.successful(Some(sampleAdmin)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/admin/test")
         .withHeaders("Authorization" -> "Bearer valid_admin_token")
@@ -163,6 +178,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(Some(sampleUser)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/admin/test")
         .withHeaders("Authorization" -> "Bearer valid_user_token")
@@ -188,6 +207,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(Some(sampleUser)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_user_token")
@@ -209,6 +232,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("admin@example.com", "ADMIN")))
       when(mockUserRepo.findUserByEmail("admin@example.com"))
         .thenReturn(Future.successful(Some(sampleAdmin)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_admin_token")
@@ -314,6 +341,10 @@ class AuthenticatedActionSpec
         .thenReturn(Success(validClaims))
       when(mockJwtUtility.getClaimsData(validClaims))
         .thenReturn(None)
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_token")
@@ -336,6 +367,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(None))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_token")
@@ -360,6 +395,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(None)) // Repository should return None for deleted users
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_token")
@@ -381,6 +420,10 @@ class AuthenticatedActionSpec
         .thenReturn(Some(("test@example.com", "USER")))
       when(mockUserRepo.findUserByEmail("test@example.com"))
         .thenReturn(Future.successful(Some(sampleUser)))
+      when(mockJwtUtility.getJtiFromClaim(any[JwtClaim]()))
+        .thenReturn(Success("test-jti-123"))
+      when(mockRedisService.isTokenBlacklisted("test-jti-123"))
+        .thenReturn(Future.successful(false))
 
       val request = FakeRequest(GET, "/test")
         .withHeaders("Authorization" -> "Bearer valid_token")

@@ -5,6 +5,7 @@ import models.User
 import play.api.mvc._
 import repositories.UserRepo
 import security.JwtUtility
+import services.RedisService
 import scala.concurrent.{ExecutionContext, Future}
 import java.sql.Timestamp
 import java.time.Instant
@@ -13,11 +14,12 @@ class StubAuthenticatedAction(
     override val parser: BodyParsers.Default,
     jwtUtility: JwtUtility,
     userRepo: UserRepo,
+    redisService: RedisService,
     shouldAuthenticate: Boolean = true,
     userRole: String = "USER",
     userId: Long = 1L
 )(implicit override val executionContext: ExecutionContext)
-    extends AuthenticatedAction(parser, jwtUtility, userRepo) {
+    extends AuthenticatedAction(parser, jwtUtility, userRepo, redisService) {
 
   private val stubUser = User(
     id = userId,

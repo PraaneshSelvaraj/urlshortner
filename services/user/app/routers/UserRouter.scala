@@ -389,7 +389,7 @@ class UserRouter @Inject() (
         )
       case Success(claim) =>
         jwtUtility.getRefreshClaimsData(claim) match {
-          case Some((email, role)) =>
+          case Some((email, role, jti)) =>
             userRepo.findUserByEmail(email) flatMap {
               case Some(user) =>
                 userRepo.getRefreshToken(user.id) flatMap {
@@ -425,6 +425,25 @@ class UserRouter @Inject() (
               )
             )
         }
+    }
+  }
+
+  override def logoutUser(in: LogoutUserRequest): Future[LogoutUserResponse] = {
+    userRepo.logoutUser(in.userId) flatMap { rowsAffected =>
+      if (rowsAffected == 1) {
+        Future.successful(
+          LogoutUserResponse(
+            success = true,
+            message = "Logout was successfull."
+          )
+        )
+      } else {
+        Future.failed(
+          new GrpcServiceException(
+            Status.INTERNAL.withDescription("Unable to logout user")
+          )
+        )
+      }
     }
   }
 

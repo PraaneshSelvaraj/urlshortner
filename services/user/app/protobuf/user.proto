@@ -77,6 +77,15 @@ message RefreshTokenResponse {
   string refreshToken = 2;
 }
 
+message LogoutUserRequest {
+  int64 userId = 1;
+}
+
+message LogoutUserResponse{
+  bool success = 1;
+  string message = 2;
+}
+
 service UserService {
   rpc createUser(CreateUserRequest) returns (User);
   rpc userLogin(LoginRequest) returns (LoginResponse);
@@ -84,4 +93,5 @@ service UserService {
   rpc getUserById(GetUserRequest) returns (User);
   rpc deleteUserById(DeleteUserRequest) returns (DeleteUserResponse);
   rpc refreshTokens(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc logoutUser(LogoutUserRequest) returns (LogoutUserResponse);
 }

@@ -9,11 +9,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import io.grpc.StatusRuntimeException
 import io.grpc.{Status => grpcStatus}
 import org.apache.pekko.grpc.GrpcServiceException
+import auth.{AuthenticatedAction, AuthenticatedRequest}
+import play.mvc
+import security.JwtUtility
+import scala.util.{Failure, Success}
 
 @Singleton
 class AuthController @Inject() (
     val controllerComponents: ControllerComponents,
-    val authService: AuthService
+    val authService: AuthService,
+    val authenticatedAction: AuthenticatedAction,
+    val jwtUtility: JwtUtility
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
@@ -158,5 +164,51 @@ class AuthController @Inject() (
           BadRequest(Json.obj(("error", "Missing or invalid Authorization Header")))
         )
     }
+  }
+
+  def logoutUser(): Action[AnyContent] = authenticatedAction.forUserOrAdmin.async {
+    implicit req: AuthenticatedRequest[AnyContent] =>
+      req.headers.get("Authorization") match {
+        case Some(authHeader) if authHeader.startsWith("Bearer ") =>
+          val token = authHeader.substring("Bearer ".length).trim
+
+          jwtUtility.decodeToken(token) match {
+            case Success(claims) =>
+              jwtUtility.getJtiFromClaim(claims) match {
+                case Success(jti) =>
+                  val expiresAt = claims.expiration.getOrElse(0L)
+
+                  authService.logoutUser(req.user.id, jti, expiresAt).map { success =>
+                    if (success) {
+                      Ok(
+                        Json.obj(
+                          "success" -> true,
+                          "message" -> "Logout was successful."
+                        )
+                      )
+                    } else {
+                      InternalServerError(
+                        Json.obj(
+                          "success" -> false,
+                          "message" -> "Logout failed."
+                        )
+                      )
+                    }
+                  }
+                case Failure(_) =>
+                  Future.successful(
+                    Unauthorized(Json.obj("error" -> "Could not extract JTI from token"))
+                  )
+              }
+            case Failure(ex) =>
+              Future.successful(
+                Unauthorized(Json.obj("error" -> s"Invalid token: ${ex.getMessage}"))
+              )
+          }
+        case _ =>
+          Future.successful(
+            BadRequest(Json.obj("error" -> "Missing or invalid Authorization header"))
+          )
+      }
   }
 }

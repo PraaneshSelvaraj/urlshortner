@@ -6,6 +6,7 @@ import play.api.Configuration
 import play.api.libs.json.Json
 
 import java.time.Clock
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.util.Try
 
@@ -29,11 +30,13 @@ class JwtUtility @Inject() (configuration: Configuration) {
   private implicit val clock: Clock = Clock.systemUTC
 
   def createToken(email: String, role: String): String = {
+    val jti = UUID.randomUUID().toString
     val claim = JwtClaim(
       content = Json
         .obj(
           "email" -> email,
-          "role" -> role
+          "role" -> role,
+          "jti" -> jti
         )
         .toString()
     ).issuedNow
@@ -43,8 +46,16 @@ class JwtUtility @Inject() (configuration: Configuration) {
   }
 
   def createRefreshToken(email: String, role: String): String = {
+    val jti = UUID.randomUUID().toString
     val claim = JwtClaim(
-      content = Json.obj("email" -> email, "role" -> role, "type" -> "refresh").toString()
+      content = Json
+        .obj(
+          "email" -> email,
+          "role" -> role,
+          "type" -> "refresh",
+          "jti" -> jti
+        )
+        .toString()
     ).issuedNow.expiresIn(refreshExpirationSeconds)
 
     JwtJson.encode(claim, refreshSecretKey, algorithm)
@@ -54,13 +65,22 @@ class JwtUtility @Inject() (configuration: Configuration) {
     JwtJson.decode(token, refreshSecretKey, Seq(algorithm))
   }
 
-  def getRefreshClaimsData(claim: JwtClaim): Option[(String, String)] = Try {
+  def getRefreshClaimsData(claim: JwtClaim): Option[(String, String, String)] = Try {
     val jsonContent = Json.parse(claim.content)
     val email = (jsonContent \ "email").as[String]
     val role = (jsonContent \ "role").as[String]
+    val jti = (jsonContent \ "jti").as[String]
     val tokenType = (jsonContent \ "type").asOpt[String]
 
-    if (tokenType.contains("refresh")) (email, role)
+    if (tokenType.contains("refresh")) (email, role, jti)
     else throw new IllegalArgumentException("Not a refresh token")
+  }.toOption
+
+  def getClaimsData(claim: JwtClaim): Option[(String, String, String)] = Try {
+    val jsonContent = Json.parse(claim.content)
+    val email = (jsonContent \ "email").as[String]
+    val role = (jsonContent \ "role").as[String]
+    val jti = (jsonContent \ "jti").as[String]
+    (email, role, jti)
   }.toOption
 }

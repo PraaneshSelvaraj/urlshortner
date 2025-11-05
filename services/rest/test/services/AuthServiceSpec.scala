@@ -25,18 +25,20 @@ import org.scalatest.time.{Seconds, Span, Milliseconds}
 import play.api.libs.json.{Json, JsObject}
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global
+import services.RedisService
 
 class AuthServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
   private val mockUserServiceClient = mock[UserServiceClient]
   private val mockNotificationServiceClient = mock[NotificationServiceClient]
+  private val mockRedisService = mock[RedisService]
   implicit val defaultPatience: PatienceConfig = PatienceConfig(
     timeout = Span(5, Seconds),
     interval = Span(50, Milliseconds)
   )
 
   private val authService =
-    new AuthService(mockUserServiceClient, mockNotificationServiceClient)
+    new AuthService(mockUserServiceClient, mockNotificationServiceClient, mockRedisService)
 
   override def beforeEach(): Unit = {
     super.beforeEach()

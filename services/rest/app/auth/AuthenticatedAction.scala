@@ -5,6 +5,7 @@ import play.api.mvc.Results._
 import play.api.http.HeaderNames._
 import repositories.UserRepo
 import security.JwtUtility
+import services.RedisService
 import play.api.libs.json.Json
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,7 +15,8 @@ import pdi.jwt.exceptions.{JwtExpirationException, JwtValidationException}
 @Singleton class AuthenticatedAction @Inject() (
     val parser: BodyParsers.Default,
     jwtUtility: JwtUtility,
-    userRepo: UserRepo
+    userRepo: UserRepo,
+    redisService: RedisService
 )(implicit val executionContext: ExecutionContext) {
 
   def apply(allowedRoles: Set[String]): ActionBuilder[AuthenticatedRequest, AnyContent] =
@@ -43,40 +45,63 @@ import pdi.jwt.exceptions.{JwtExpirationException, JwtValidationException}
           val token = header.substring(7)
           jwtUtility.decodeToken(token) match {
             case Success(claims) =>
-              jwtUtility.getClaimsData(claims) match {
-                case Some((email, role)) =>
-                  userRepo.findUserByEmail(email) flatMap {
-                    case Some(user) =>
-                      if (user.is_deleted) {
-                        Future.successful(
-                          Forbidden(
-                            Json.obj("message" -> "Invalid token: User not found or deactivated")
-                          )
-                        )
-                      } else if (allowedRoles.contains(user.role)) {
-                        block(AuthenticatedRequest(user, request))
-                      } else {
-                        Future.successful(
-                          Forbidden(
-                            Json.obj(
-                              "message" -> s"Access denied: User role '${user.role}' is not authorized"
-                            )
-                          )
-                        )
-                      }
-                    case None =>
+              jwtUtility.getJtiFromClaim(claims) match {
+                case Success(jti) =>
+                  redisService.isTokenBlacklisted(jti).flatMap { isBlacklisted =>
+                    if (isBlacklisted) {
                       Future.successful(
                         Unauthorized(
-                          Json.obj("message" -> "Invalid token: User not found or deactivated")
+                          Json.obj("message" -> "Token has been revoked")
                         )
                       )
+                    } else {
+                      jwtUtility.getClaimsData(claims) match {
+                        case Some((email, role)) =>
+                          userRepo.findUserByEmail(email) flatMap {
+                            case Some(user) =>
+                              if (user.is_deleted) {
+                                Future.successful(
+                                  Forbidden(
+                                    Json.obj(
+                                      "message" -> "Invalid token: User not found or deactivated"
+                                    )
+                                  )
+                                )
+                              } else if (allowedRoles.contains(user.role)) {
+                                block(AuthenticatedRequest(user, request))
+                              } else {
+                                Future.successful(
+                                  Forbidden(
+                                    Json.obj(
+                                      "message" -> s"Access denied: User role '${user.role}' is not authorized"
+                                    )
+                                  )
+                                )
+                              }
+                            case None =>
+                              Future.successful(
+                                Unauthorized(
+                                  Json.obj(
+                                    "message" -> "Invalid token: User not found or deactivated"
+                                  )
+                                )
+                              )
+                          }
+                        case None =>
+                          Future.successful(
+                            Unauthorized(
+                              Json.obj(
+                                "message" -> "Invalid token: Missing required claims (email/role)"
+                              )
+                            )
+                          )
+                      }
+                    }
                   }
-                case None =>
+                case Failure(_) =>
                   Future.successful(
                     Unauthorized(
-                      Json.obj(
-                        "message" -> "Invalid token: Missing required claims (username/role)"
-                      )
+                      Json.obj("message" -> "Invalid token: Missing JTI")
                     )
                   )
               }

@@ -49,6 +49,7 @@ class UrlControllerSpec
     new BodyParsers.Default(stubControllerComponents.parsers),
     mockJwtUtility,
     mockUserRepo,
+    mockRedisService,
     shouldAuthenticate = true,
     userRole = "USER",
     userId = authenticatedUserId
@@ -58,6 +59,7 @@ class UrlControllerSpec
     new BodyParsers.Default(stubControllerComponents.parsers),
     mockJwtUtility,
     mockUserRepo,
+    mockRedisService,
     shouldAuthenticate = true,
     userRole = "ADMIN",
     userId = authenticatedUserId

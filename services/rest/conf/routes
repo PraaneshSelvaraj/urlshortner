@@ -22,5 +22,7 @@ POST    /auth/login                       controllers.AuthController.login()
 POST    /auth/google/login                controllers.AuthController.googleLogin()
 + nocsrf
 POST   /auth/refresh                      controllers.AuthController.refreshTokens()
++ nocsrf
+POST    /auth/logout                      controllers.AuthController.logoutUser()
 
 GET    /:shortCode                        controllers.UrlController.redirectUrl(shortCode: String)

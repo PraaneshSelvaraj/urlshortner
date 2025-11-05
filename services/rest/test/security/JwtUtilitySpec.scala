@@ -12,6 +12,7 @@ class JwtUtilitySpec extends AnyFlatSpec with Matchers {
   val config: Configuration = Configuration.from(
     Map(
       "jwt.secretKey" -> "my-secret-key",
+      "jwt.expirationSeconds" -> 3600,
       "jwt.algorithm" -> "HS256"
     )
   )

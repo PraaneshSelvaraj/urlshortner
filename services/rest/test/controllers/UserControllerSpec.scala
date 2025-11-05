@@ -26,6 +26,7 @@ import io.grpc.StatusRuntimeException
 import io.grpc.Status
 import org.scalatest.BeforeAndAfterEach
 import dtos.UserDto
+import services.RedisService
 
 class UserControllerSpec
     extends PlaySpec
@@ -41,11 +42,13 @@ class UserControllerSpec
   val mockJwtUtility: JwtUtility = mock[JwtUtility]
   val mockUserRepo: UserRepo = mock[UserRepo]
   val mockConfig: Configuration = mock[Configuration]
+  val mockRedisService: RedisService = mock[RedisService]
 
   val stubAuthenticatedAction = new StubAuthenticatedAction(
     new BodyParsers.Default(stubControllerComponents.parsers),
     mockJwtUtility,
     mockUserRepo,
+    mockRedisService,
     shouldAuthenticate = true,
     userRole = "USER",
     userId = 1L

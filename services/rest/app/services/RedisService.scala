@@ -44,6 +44,23 @@ class RedisService @Inject() (config: Configuration)(implicit ec: ExecutionConte
     } yield allowed
   }
 
+  def blacklistToken(jti: String, expiresAt: Long): Future[Boolean] = {
+    val now = Instant.now().getEpochSecond
+    val ttl = (expiresAt - now).toInt
+
+    if (ttl <= 0) {
+      Future.successful(true)
+    } else {
+      val key = s"blacklist:$jti"
+      redis.setex(key, ttl, "revoked").asScala.map(_ => true)
+    }
+  }
+
+  def isTokenBlacklisted(jti: String): Future[Boolean] = {
+    val key = s"blacklist:$jti"
+    redis.get(key).asScala.map(value => value != null)
+  }
+
   def close(): Unit = {
     connection.close()
     client.shutdown()
