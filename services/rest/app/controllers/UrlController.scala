@@ -82,10 +82,26 @@ class UrlController @Inject() (
       }
   }
 
-  def getUrls: Action[AnyContent] = authenticatedAction.forAdmin.async {
-    implicit req: AuthenticatedRequest[AnyContent] =>
-      urlService.getAllUrls.map(urls => Ok(Json.obj(("message", "List of Urls"), ("urls", urls))))
-  }
+  def getUrls(pageNo: Option[Int] = Some(0), pageSize: Option[Int] = Some(20)): Action[AnyContent] =
+    authenticatedAction.forAdmin.async { implicit req: AuthenticatedRequest[AnyContent] =>
+      val page = pageNo.getOrElse(0).max(0)
+      val size = pageSize.getOrElse(20).min(100)
+
+      val offset = page * size
+
+      urlService
+        .getAllUrls(offset = offset, limit = size)
+        .map(urls =>
+          Ok(
+            Json.obj(
+              ("message", "List of Urls"),
+              ("pageNo", page),
+              ("pageSize", size),
+              ("urls", urls)
+            )
+          )
+        )
+    }
 
   def getUrlByShortCode(shortCode: String): Action[AnyContent] =
     authenticatedAction.forUserOrAdmin.async { implicit req: Request[AnyContent] =>
@@ -137,11 +153,23 @@ class UrlController @Inject() (
       }
     }
 
-  def getNotifications: Action[AnyContent] = authenticatedAction.forAdmin.async {
-    implicit req: Request[AnyContent] =>
-      urlService.getNotifications map { notifications =>
-        Ok(Json.obj(("message", "List of all Notifications"), ("notifications", notifications)))
+  def getNotifications(pageNo: Option[Int], pageSize: Option[Int]): Action[AnyContent] =
+    authenticatedAction.forAdmin.async { implicit req: Request[AnyContent] =>
+      val page = pageNo.getOrElse(0).max(0)
+      val size = pageSize.getOrElse(20).min(100)
+
+      val offset = page * size
+
+      urlService.getNotifications(offset = offset, limit = size) map { notifications =>
+        Ok(
+          Json.obj(
+            ("message", "List of all Notifications"),
+            ("pageNo", page),
+            ("pageSize", size),
+            ("notifications", notifications)
+          )
+        )
       }
-  }
+    }
 
 }

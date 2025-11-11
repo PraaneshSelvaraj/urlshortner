@@ -99,10 +99,10 @@ class NotificationRouterSpec extends AnyWordSpec with Matchers with MockitoSugar
         Timestamp.from(Instant.now())
       )
 
-      when(mockRepo.getNotifications)
+      when(mockRepo.getNotifications(any[Int](), any[Int]()))
         .thenReturn(Future.successful(Seq(notification1, notification2)))
 
-      val result = router.getNotifications(Empty())
+      val result = router.getNotifications(GetNotificationsRequest())
 
       whenReady(result) { response =>
         response.notifications.length shouldBe 2

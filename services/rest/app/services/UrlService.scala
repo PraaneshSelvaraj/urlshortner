@@ -8,9 +8,9 @@ import example.urlshortner.notification.grpc.{
   GetNotificationsResponse,
   NotificationRequest,
   NotificationServiceClient,
-  NotificationType
+  NotificationType,
+  GetNotificationsRequest
 }
-import com.google.protobuf.empty.Empty
 import exceptions.{TresholdReachedException, UrlExpiredException, InvalidUrlException}
 import java.time.{Instant, Duration}
 import javax.inject.Inject
@@ -101,7 +101,8 @@ class UrlService @Inject() (
     } yield url
   }
 
-  def getAllUrls: Future[Seq[Url]] = urlRepo.getAllUrls
+  def getAllUrls(offset: Int = 0, limit: Int = 20): Future[Seq[Url]] =
+    urlRepo.getAllUrls(offset, limit)
 
   def getUrlByShortCode(shortCode: String): Future[Option[Url]] =
     urlRepo.getUrlByShortcode(shortCode)
@@ -118,8 +119,9 @@ class UrlService @Inject() (
     } yield rowsAffected
   }
 
-  def getNotifications: Future[Seq[Notification]] = {
-    notificationServiceClient.getNotifications(Empty()) map { response: GetNotificationsResponse =>
+  def getNotifications(offset: Int = 0, limit: Int = 20): Future[Seq[Notification]] = {
+    val request = GetNotificationsRequest(offset = Some(offset), limit = Some(limit))
+    notificationServiceClient.getNotifications(request) map { response: GetNotificationsResponse =>
       response.notifications map { notification =>
         Notification(
           id = notification.id,

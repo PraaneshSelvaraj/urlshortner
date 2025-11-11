@@ -4,12 +4,12 @@ GET     /health                           controllers.HomeController.health()
 
 + nocsrf
 POST    /urls                             controllers.UrlController.addUrl()
-GET     /urls                             controllers.UrlController.getUrls()
+GET     /urls                             controllers.UrlController.getUrls(pageNo: Option[Int], pageSize: Option[Int])
 GET     /urls/:shortCode                  controllers.UrlController.getUrlByShortCode(shortCode: String)
 + nocsrf
 DELETE  /urls/:shortCode                  controllers.UrlController.deleteUrlByShortCode(shortCode: String)
 
-GET     /notifications                    controllers.UrlController.getNotifications()
+GET     /notifications                    controllers.UrlController.getNotifications(pageNo: Option[Int], pageSize: Option[Int])
 + nocsrf
 POST    /user                             controllers.UserController.addUser()
 GET     /user/:id                         controllers.UserController.getUserById(id: Long)

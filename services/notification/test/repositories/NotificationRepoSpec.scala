@@ -161,7 +161,7 @@ class NotificationRepoSpec
         _ <- repo.addNotification(n1)
         _ <- repo.addNotification(n2)
         _ <- repo.addNotification(n3)
-        notifications <- repo.getNotifications
+        notifications <- repo.getNotifications()
       } yield notifications
 
       whenReady(result) { notifications =>

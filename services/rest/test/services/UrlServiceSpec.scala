@@ -14,7 +14,8 @@ import example.urlshortner.notification.grpc.{
   NotificationReply,
   NotificationRequest,
   NotificationServiceClient,
-  NotificationType
+  NotificationType,
+  GetNotificationsRequest
 }
 import com.google.protobuf.empty.Empty
 import com.typesafe.config.ConfigFactory
@@ -197,9 +198,10 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         expires_at = Timestamp.from(Instant.now().plus(Duration.ofHours(1)))
       )
 
-      when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq(url1, url2, url3)))
+      when(mockUrlRepo.getAllUrls(any[Int](), any[Int]()))
+        .thenReturn(Future.successful(Seq(url1, url2, url3)))
 
-      val result = urlService.getAllUrls
+      val result = urlService.getAllUrls()
 
       whenReady(result) { urls =>
         urls.length mustBe 3
@@ -208,8 +210,8 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
     }
 
     "return empty seq when no Urls found" in {
-      when(mockUrlRepo.getAllUrls).thenReturn(Future.successful(Seq.empty))
-      val result = urlService.getAllUrls
+      when(mockUrlRepo.getAllUrls(any[Int](), any[Int]())).thenReturn(Future.successful(Seq.empty))
+      val result = urlService.getAllUrls()
 
       whenReady(result) { urls =>
         urls.length mustBe 0
@@ -252,10 +254,10 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         )
       )
       val grpcResponse = GetNotificationsResponse(notifications = grpcNotifications)
-      when(mockNotificationServiceClient.getNotifications(any[Empty]()))
+      when(mockNotificationServiceClient.getNotifications(any[GetNotificationsRequest]()))
         .thenReturn(Future.successful(grpcResponse))
 
-      val result = urlService.getNotifications
+      val result = urlService.getNotifications()
 
       whenReady(result) { notifications =>
         notifications.size mustBe 1
@@ -264,7 +266,7 @@ class UrlServiceSpec extends PlaySpec with MockitoSugar with ScalaFutures with B
         notification.message mustBe "New URL created"
         notification.notificationType mustBe NotificationType.NEWURL.toString
         notification.notificationStatus mustBe "SUCCESS"
-        verify(mockNotificationServiceClient).getNotifications(any[Empty]())
+        verify(mockNotificationServiceClient).getNotifications(any[GetNotificationsRequest]())
       }
     }
 

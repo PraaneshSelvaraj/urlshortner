@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package notification;
 
-import "google/protobuf/empty.proto";
-
 option java_multiple_files = true;
 option java_outer_classname = "NotificationProto";
 option java_package = "example.urlshortner.notification.grpc";
@@ -42,11 +40,16 @@ message Notification {
   string message = 6;
 }
 
+message GetNotificationsRequest{
+  optional int32 offset = 1;
+  optional int32 limit = 2;
+}
+
 message GetNotificationsResponse {
   repeated Notification notifications = 1;
 }
 
 service NotificationService {
   rpc notify(NotificationRequest) returns (NotificationReply);
-  rpc getNotifications(google.protobuf.Empty) returns (GetNotificationsResponse);
+  rpc getNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
 }

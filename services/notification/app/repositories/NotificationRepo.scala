@@ -29,34 +29,35 @@ class NotificationRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
     notifications += notification
   )
 
-  def getNotifications: Future[Seq[NotificationDTO]] = dbConfig.db.run(
-    (for {
-      n <- notifications
-      t <- notificationTypes if n.notification_type_id === t.id
-      status <- notificationStatuses if n.notification_status_id === status.id
-    } yield (
-      n.id,
-      n.short_code,
-      n.user_id,
-      t.name,
-      status.name,
-      n.message,
-      n.created_at,
-      n.updated_at
-    )).result
-      .map(_.map {
-        case (id, short_code, user_id, typeName, status, message, created_at, updated_at) =>
-          NotificationDTO(
-            id,
-            short_code,
-            user_id,
-            typeName,
-            status,
-            message,
-            created_at,
-            updated_at
-          )
-      })
-  )
+  def getNotifications(offset: Int = 0, limit: Int = 20): Future[Seq[NotificationDTO]] =
+    dbConfig.db.run(
+      (for {
+        n <- notifications.sortBy(_.created_at.desc).drop(offset).take(limit)
+        t <- notificationTypes if n.notification_type_id === t.id
+        status <- notificationStatuses if n.notification_status_id === status.id
+      } yield (
+        n.id,
+        n.short_code,
+        n.user_id,
+        t.name,
+        status.name,
+        n.message,
+        n.created_at,
+        n.updated_at
+      )).result
+        .map(_.map {
+          case (id, short_code, user_id, typeName, status, message, created_at, updated_at) =>
+            NotificationDTO(
+              id,
+              short_code,
+              user_id,
+              typeName,
+              status,
+              message,
+              created_at,
+              updated_at
+            )
+        })
+    )
 
 }

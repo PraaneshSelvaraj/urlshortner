@@ -1,6 +1,5 @@
 package routers
 
-import com.google.protobuf.empty.Empty
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.grpc.GrpcServiceException
 import org.apache.pekko.stream.Materializer
@@ -96,8 +95,11 @@ class NotificationRouter @Inject() (
     }
   }
 
-  override def getNotifications(in: Empty): Future[GetNotificationsResponse] =
-    notificationRepo.getNotifications map { notifications =>
+  override def getNotifications(in: GetNotificationsRequest): Future[GetNotificationsResponse] =
+    notificationRepo.getNotifications(
+      offset = in.offset.getOrElse(0),
+      limit = in.limit.getOrElse(20)
+    ) map { notifications =>
       val grpcNotifications = notifications.map { notification =>
         val notificationType = notification.notificationType match {
           case "NEWURL"   => NotificationType.NEWURL

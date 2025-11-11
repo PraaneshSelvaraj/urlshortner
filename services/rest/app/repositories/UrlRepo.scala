@@ -15,8 +15,8 @@ class UrlRepo @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: 
 
   private val db = dbConfig.db
 
-  def getAllUrls: Future[Seq[Url]] =
-    db.run(urls.result)
+  def getAllUrls(offset: Int = 0, limit: Int = 20): Future[Seq[Url]] =
+    db.run(urls.sortBy(_.created_at.desc).drop(offset).take(limit).result)
 
   def getUrlById(id: Long): Future[Option[Url]] =
     db.run(urls.filter(_.id === id).filter(_.is_deleted === false).result.headOption)

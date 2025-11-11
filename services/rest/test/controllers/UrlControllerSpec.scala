@@ -268,13 +268,14 @@ class UrlControllerSpec
 
     "return all URLs successfully" in {
       val urls = Seq(sampleUrl)
-      when(mockUrlService.getAllUrls)
+      when(mockUrlService.getAllUrls(any[Int](), any[Int]()))
         .thenReturn(Future.successful(urls))
 
       val request = FakeRequest(GET, "/urls")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = adminController.getUrls(request)
+      val action = adminController.getUrls(Some(0), Some(20))
+      val result: Future[Result] = call(action, request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "message").as[String] mustBe "List of Urls"
@@ -282,13 +283,14 @@ class UrlControllerSpec
     }
 
     "return empty list when no URLs found" in {
-      when(mockUrlService.getAllUrls)
+      when(mockUrlService.getAllUrls(any[Int](), any[Int]()))
         .thenReturn(Future.successful(Seq.empty))
 
       val request = FakeRequest(GET, "/urls")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = adminController.getUrls(request)
+      val action = adminController.getUrls(Some(0), Some(20))
+      val result: Future[Result] = call(action, request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "urls").as[Seq[Url]] mustBe empty
@@ -449,13 +451,14 @@ class UrlControllerSpec
         )
       )
 
-      when(mockUrlService.getNotifications)
+      when(mockUrlService.getNotifications(any[Int](), any[Int]()))
         .thenReturn(Future.successful(notifications))
 
       val request = FakeRequest(GET, "/notifications")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = adminController.getNotifications(request)
+      val action = adminController.getNotifications(Some(0), Some(20))
+      val result: Future[Result] = call(action, request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "message").as[String] mustBe "List of all Notifications"
@@ -463,13 +466,14 @@ class UrlControllerSpec
     }
 
     "return empty list when no notifications found" in {
-      when(mockUrlService.getNotifications)
+      when(mockUrlService.getNotifications(any[Int](), any[Int]()))
         .thenReturn(Future.successful(Seq.empty))
 
       val request = FakeRequest(GET, "/notifications")
         .withHeaders("Authorization" -> "Bearer valid_token")
 
-      val result: Future[Result] = adminController.getNotifications(request)
+      val action = adminController.getNotifications(Some(0), Some(20))
+      val result: Future[Result] = call(action, request)
 
       status(result) mustBe OK
       (contentAsJson(result) \ "notifications").as[Seq[Notification]] mustBe empty

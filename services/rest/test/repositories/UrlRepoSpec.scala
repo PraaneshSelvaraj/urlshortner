@@ -142,7 +142,7 @@ class UrlRepoSpec
 
       whenReady(urlRepo.addUrl(url1)) { _ =>
         whenReady(urlRepo.addUrl(url2)) { _ =>
-          whenReady(urlRepo.getAllUrls) { urls =>
+          whenReady(urlRepo.getAllUrls()) { urls =>
             urls.map(_.short_code) should contain allOf ("code1", "code2")
           }
         }
